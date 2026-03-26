@@ -1,5 +1,5 @@
 # Approximate_ECC
-
+Codebase for Approximate ECC Paper
 ## DAG Visualization (PNG)
 
 The `demo.py` script can optionally render the hash-node DAG as PNG files (with nodes
