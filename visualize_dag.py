@@ -1,21 +1,21 @@
-"""Graphviz-based visualization for the hash-node DAG."""
+"""Graphviz-based visualization for the hash-node graph."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from hash_dag import HashDag
+from hash_dag import HashGraph
 
 try:
     # Python package: `pip install graphviz`
-    from graphviz import Digraph  # type: ignore
+    from graphviz import Graph  # type: ignore
 
 except ImportError:  # pragma: no cover
-    Digraph = None  # type: ignore
+    Graph = None  # type: ignore
 
 
 def render_hash_dag_png(
-    dag: HashDag,
+    dag: HashGraph,
     out_path: str,
     mismatched_node_ids: set[str],
     *,
@@ -24,15 +24,15 @@ def render_hash_dag_png(
     mismatched_color: str = "#f4cccc",
 ) -> str:
     """
-    Render a DAG PNG.
+    Render a graph PNG.
 
     Nodes are colored as mismatched vs matched relative to the baseline digests
     (based on `mismatched_node_ids`).
     """
 
-    if Digraph is None:  # pragma: no cover
+    if Graph is None:  # pragma: no cover
         raise RuntimeError(
-            "Missing dependency for DAG rendering. Install Python package "
+            "Missing dependency for graph rendering. Install Python package "
             "`graphviz` (e.g., `pip install graphviz`). Also ensure the Graphviz "
             "`dot` binary is installed system-wide."
         )
@@ -44,7 +44,7 @@ def render_hash_dag_png(
     filename_no_ext = out_file.stem
     directory = str(out_file.parent)
 
-    dot = Digraph(name=filename_no_ext, format="png")
+    dot = Graph(name=filename_no_ext, format="png")
     dot.attr(rankdir="LR", concentrate="true")
     dot.attr("node", shape="box", style="filled", fontname="Helvetica")
 

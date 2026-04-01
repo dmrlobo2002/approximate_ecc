@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import os
 import random
 import statistics
@@ -85,4 +86,17 @@ class Timer:
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.elapsed = time.perf_counter() - self._t0
+
+
+def compute_overhead_ratio(
+    bit_length: int,
+    row_group_size: int,
+    col_group_size: int,
+    hash_bits: int,
+) -> float:
+    """ECC overhead ratio = total hash bits / data bits."""
+    n = math.ceil(math.sqrt(bit_length))
+    row_nodes = math.ceil(n / row_group_size)
+    col_nodes = math.ceil(n / col_group_size)
+    return (row_nodes + col_nodes) * hash_bits / bit_length
 

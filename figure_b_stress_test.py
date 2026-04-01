@@ -9,7 +9,7 @@ from typing import Any
 from bitflip_solver import correct_with_dag
 from grid_shuffle import bits_to_grid, grid_to_bits, source_index_to_grid_coord
 from group_hash import build_hash_nodes
-from hash_dag import build_hash_dag
+from hash_dag import build_hash_graph
 
 from experiments.common import (
     agg,
@@ -180,7 +180,7 @@ def maybe_render_viz(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
     )
-    dag = build_hash_dag(baseline_hashes)
+    dag = build_hash_graph(baseline_hashes)
 
     trial_dir = os.path.join(viz_dir, f"{mode}_hash{hash_bits}_flips{flip_count:02d}_key{key_id}")
     os.makedirs(trial_dir, exist_ok=True)

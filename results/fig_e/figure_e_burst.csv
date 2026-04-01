@@ -1,0 +1,13 @@
+condition,flip_mode,rounds,ber_target,ber_actual,flip_count,success_rate,mean_combos,mean_solve_time_s,n_trials
+random + shuffle,random,8,0.001,0.015625,1,1.0,2.0,0.001523,5
+random + shuffle,random,8,0.004642,0.015625,1,1.0,2.0,0.001601,5
+random + shuffle,random,8,0.021544,0.015625,1,1.0,2.0,0.001551,5
+random + shuffle,random,8,0.1,0.09375,6,1.0,24.6,0.003406,5
+burst  + shuffle,burst,8,0.001,0.015625,1,1.0,2.0,0.001557,5
+burst  + shuffle,burst,8,0.004642,0.015625,1,1.0,2.0,0.001572,5
+burst  + shuffle,burst,8,0.021544,0.015625,1,1.0,2.0,0.001489,5
+burst  + shuffle,burst,8,0.1,0.09375,6,1.0,24.0,0.003412,5
+burst  + no shuffle,burst,0,0.001,0.015625,1,1.0,2.0,0.001476,5
+burst  + no shuffle,burst,0,0.004642,0.015625,1,1.0,2.0,0.001562,5
+burst  + no shuffle,burst,0,0.021544,0.015625,1,1.0,2.0,0.001486,5
+burst  + no shuffle,burst,0,0.1,0.09375,6,1.0,15.0,0.002604,5

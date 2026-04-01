@@ -1,0 +1,5 @@
+{
+  "bit_length": 256,
+  "fig_c_csv": "results/fig_c/figure_c_ber.csv",
+  "threshold": 0.9
+}

@@ -1,0 +1,29 @@
+{
+  "ber_max": 0.1,
+  "ber_min": 0.001,
+  "ber_steps": 4,
+  "bit_length": 64,
+  "col_group_size": 1,
+  "conditions": [
+    [
+      "random",
+      8,
+      "random + shuffle"
+    ],
+    [
+      "burst",
+      8,
+      "burst  + shuffle"
+    ],
+    [
+      "burst",
+      0,
+      "burst  + no shuffle"
+    ]
+  ],
+  "hash_bits": 16,
+  "keys": 5,
+  "row_group_size": 1,
+  "seed": 0,
+  "tail_policy": "include_partial"
+}

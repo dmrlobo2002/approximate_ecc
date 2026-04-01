@@ -49,7 +49,7 @@ def bits_to_grid(bits: list[int] | tuple[int, ...] | str, key: bytes, rounds: in
     grid_to_source = [-1] * m
 
     for src_idx, bit in enumerate(padded):
-        dst_idx = permute_index(src_idx, m, key, rounds=rounds)
+        dst_idx = src_idx if rounds == 0 else permute_index(src_idx, m, key, rounds=rounds)
         grid_linear[dst_idx] = bit
         source_to_grid[src_idx] = dst_idx
         grid_to_source[dst_idx] = src_idx
@@ -74,7 +74,7 @@ def grid_to_bits(grid: list[list[int]], meta: GridMeta, key: bytes) -> list[int]
     restored = [0] * meta.m
 
     for dst_idx, bit in enumerate(grid_linear):
-        src_idx = invert_index(dst_idx, meta.m, key, rounds=meta.rounds)
+        src_idx = dst_idx if meta.rounds == 0 else invert_index(dst_idx, meta.m, key, rounds=meta.rounds)
         restored[src_idx] = bit
 
     return restored[: meta.original_length]

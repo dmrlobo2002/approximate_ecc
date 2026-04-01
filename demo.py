@@ -8,7 +8,7 @@ import random
 from bitflip_solver import correct_with_dag
 from grid_shuffle import bits_to_grid, grid_to_bits, source_index_to_grid_coord
 from group_hash import build_hash_nodes
-from hash_dag import build_hash_dag
+from hash_dag import build_hash_graph
 
 
 def parse_args() -> argparse.Namespace:
@@ -100,7 +100,7 @@ def main() -> None:
         try:
             from visualize_dag import render_hash_dag_png
 
-            dag = build_hash_dag(baseline_hashes)
+            dag = build_hash_graph(baseline_hashes)
             if not result.step_snapshots:
                 print("No successful correction steps were recorded; no DAG snapshots generated.")
                 return

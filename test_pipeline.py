@@ -1,7 +1,7 @@
 from bitflip_solver import correct_with_dag
 from grid_shuffle import bits_to_grid, grid_to_bits
 from group_hash import build_hash_nodes
-from hash_dag import build_hash_dag
+from hash_dag import build_hash_graph
 
 
 def test_round_trip_bits():
@@ -17,7 +17,7 @@ def test_hash_dag_has_weighted_overlaps():
     bits = [i % 2 for i in range(49)]
     grid, meta = bits_to_grid(bits, key=key, rounds=8)
     nodes = build_hash_nodes(grid, meta, row_group_size=2, col_group_size=3, hash_bits=16)
-    dag = build_hash_dag(nodes)
+    dag = build_hash_graph(nodes)
     assert len(dag.nodes) == len(nodes)
     assert all(edge.weight > 0 for edge in dag.edges)
 

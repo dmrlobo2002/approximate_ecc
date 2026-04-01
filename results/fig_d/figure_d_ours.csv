@@ -1,0 +1,7 @@
+scheme,hash_bits,group_config,overhead_ratio,correction_threshold_ber,data_bits
+"Ours (g=1, 16b)",16,g=1,2.0,0.09375,256
+"Ours (g=2, 16b)",16,g=2,1.0,0.09375,256
+"Ours (g=4, 16b)",16,g=4,0.5,0.01562,256
+"Ours (g=1, 32b)",32,g=1,4.0,0.09375,256
+"Ours (g=2, 32b)",32,g=2,2.0,0.09375,256
+"Ours (g=4, 32b)",32,g=4,1.0,0.09375,256

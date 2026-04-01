@@ -1,0 +1,14 @@
+{
+  "ber_max": 0.1,
+  "ber_min": 0.001,
+  "ber_steps": 4,
+  "hash_bits": 16,
+  "keys": 5,
+  "lengths": [
+    64,
+    128
+  ],
+  "rounds": 8,
+  "seed": 0,
+  "threshold": 0.9
+}

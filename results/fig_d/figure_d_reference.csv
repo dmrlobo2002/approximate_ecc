@@ -1,0 +1,8 @@
+scheme,overhead_ratio,correction_threshold_ber,correctable_bits,source
+"Hamming(265,256)",0.0352,0.00391,1,analytic
+"BCH(511,475,t=2)",0.0758,0.00421,2,analytic
+"BCH(511,439,t=4)",0.164,0.00911,4,analytic
+"BCH(511,367,t=8)",0.3924,0.0218,8,analytic
+"BCH(511,223,t=16)",1.2915,0.07175,16,analytic
+LDPC(rate=0.75),0.332,,,analytic
+LDPC(rate=0.5),1.0,,,analytic
