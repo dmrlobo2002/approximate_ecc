@@ -1,10 +1,7 @@
 """DAG-guided correction by exhaustive bit-flip enumeration."""
-
 from __future__ import annotations
-
 from dataclasses import dataclass, field
 from itertools import combinations
-
 from group_hash import HashNode, TailPolicy, build_hash_nodes
 from grid_shuffle import GridMeta, source_index_to_grid_coord
 from hash_dag import HashDag, build_hash_dag
@@ -17,6 +14,11 @@ class SolveResult:
     mismatched_after: set[str]
     steps: list[str]
     step_snapshots: list[tuple[str, set[str]]] = field(default_factory=list)
+    # --- New metrics ---
+    total_combos_evaluated: int = 0
+    total_nodes_visited: int = 0
+    max_flip_level_reached: int = 0
+    nodes_with_no_correction: int = 0
 
 
 def _node_map(nodes: list[HashNode]) -> dict[str, HashNode]:
@@ -88,13 +90,23 @@ def correct_with_dag(
         tail_policy=tail_policy,
     )
     dag: HashDag = build_hash_dag(baseline_nodes)
-
     mismatched_before = _mismatched_ids(current_nodes, baseline_nodes)
+
     steps: list[str] = []
     step_snapshots: list[tuple[str, set[str]]] = []
+
+    if record_step_snapshots:
+        step_snapshots.append(("initial", set(mismatched_before)))
+
     working_grid = _copy_grid(current_grid)
     baseline_map = _node_map(baseline_nodes)
     ordered_nodes = sorted(dag.nodes.values(), key=lambda n: (n.covered_bits, n.node_id))
+
+    # --- Metric counters ---
+    total_combos_evaluated = 0
+    total_nodes_visited = 0
+    max_flip_level_reached = 0
+    nodes_with_no_correction = 0
 
     for node in ordered_nodes:
         latest_nodes = build_hash_nodes(
@@ -109,16 +121,17 @@ def correct_with_dag(
         if latest_map[node.node_id].digest == baseline_map[node.node_id].digest:
             continue
 
+        total_nodes_visited += 1
         src_indices = sorted(node.source_indices)
         best_grid: list[list[int]] | None = None
         best_nodes: list[HashNode] | None = None
         best_match = -1
         best_flip_count = None
 
-        # Exhaustive enumeration over all source-bit flip combinations.
         for flips in range(len(src_indices) + 1):
             found_for_level = False
             for combo in combinations(src_indices, flips):
+                total_combos_evaluated += 1
                 candidate = _copy_grid(working_grid)
                 _flip_sources(candidate, combo, meta)
                 score, cand_nodes = _score_candidate(
@@ -144,16 +157,18 @@ def correct_with_dag(
                     best_nodes = cand_nodes
                     best_flip_count = flips
             if found_for_level:
+                if flips > max_flip_level_reached:
+                    max_flip_level_reached = flips
                 break
 
         if best_grid is not None and best_nodes is not None:
             working_grid = best_grid
             steps.append(f"Corrected {node.node_id} using {best_flip_count} flips.")
             if record_step_snapshots:
-                # Snapshot mismatches *after* the successful correction step.
                 step_mismatched = _mismatched_ids(best_nodes, baseline_nodes)
                 step_snapshots.append((node.node_id, step_mismatched))
         else:
+            nodes_with_no_correction += 1
             steps.append(f"No correction found for {node.node_id} after full enumeration.")
 
     final_nodes = build_hash_nodes(
@@ -165,11 +180,15 @@ def correct_with_dag(
         tail_policy=tail_policy,
     )
     mismatched_after = _mismatched_ids(final_nodes, baseline_nodes)
+
     return SolveResult(
         corrected_grid=working_grid,
         mismatched_before=mismatched_before,
         mismatched_after=mismatched_after,
         steps=steps,
         step_snapshots=step_snapshots,
+        total_combos_evaluated=total_combos_evaluated,
+        total_nodes_visited=total_nodes_visited,
+        max_flip_level_reached=max_flip_level_reached,
+        nodes_with_no_correction=nodes_with_no_correction,
     )
-

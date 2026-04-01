@@ -1,0 +1,13 @@
+{
+  "bit_length": 1024,
+  "col_group_size": 2,
+  "hash_sizes": [
+    16
+  ],
+  "keys": 10,
+  "max_flip_count": 10,
+  "rounds": 8,
+  "row_group_size": 2,
+  "seed": 0,
+  "tail_policy": "include_partial"
+}
