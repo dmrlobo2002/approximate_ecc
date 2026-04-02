@@ -26,7 +26,7 @@ DEFAULT_ROUNDS = 8
 DEFAULT_ROW_GROUP = 2
 DEFAULT_COL_GROUP = 2
 DEFAULT_TAIL_POLICY = "include_partial"
-MAX_FLIP_COUNT = 10
+DEFAULT_MAX_BER = 0.05
 FLIP_MODES = ["random", "burst", "both"]
 
 
@@ -51,6 +51,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     p.add_argument("--bit-length", type=int, default=DEFAULT_BIT_LENGTH, help="Number of source bits L")
+    p.add_argument(
+        "--max-ber",
+        type=float,
+        default=DEFAULT_MAX_BER,
+        help="Maximum bit error rate; sets the upper flip count to floor(max_ber * bit_length), e.g. 0.05 for 5%%",
+    )
     p.add_argument("--rounds", type=int, default=DEFAULT_ROUNDS, help="Feistel rounds")
     p.add_argument("--row-group-size", type=int, default=DEFAULT_ROW_GROUP, help="Row group size")
     p.add_argument("--col-group-size", type=int, default=DEFAULT_COL_GROUP, help="Col group size")
@@ -138,6 +144,7 @@ def run_trial(
         "total_nodes_visited": result.total_nodes_visited,
         "max_flip_level_reached": result.max_flip_level_reached,
         "nodes_with_no_correction": result.nodes_with_no_correction,
+        "solve_time_ms": round(result.solve_time_seconds * 1000, 3),
         # Pass through for viz
         "_result": result,
         "_baseline_grid": baseline_grid,
@@ -202,12 +209,13 @@ def collect_rows(
     bits: list[int],
     viz_key_ids: set[int],
     viz_flip_counts: set[int],
+    max_flip_count: int,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
 
     for mode in modes:
         for hash_bits in hash_sizes:
-            for flip_count in range(1, MAX_FLIP_COUNT + 1):
+            for flip_count in range(1, max_flip_count + 1):
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
                     rng = stable_rng(args.seed, key_id, flip_count, hash_bits, mode)
@@ -288,14 +296,16 @@ def plot_results(
     hash_sizes: list[int],
     modes: list[str],
     out_dir: str,
+    bit_length: int,
+    max_flip_count: int,
 ) -> None:
     import matplotlib.pyplot as plt
 
-    flip_counts = list(range(1, MAX_FLIP_COUNT + 1))
+    flip_counts = list(range(1, max_flip_count + 1))
 
     for mode in modes:
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        fig.suptitle(f"Solver effectiveness ? flip mode: {mode}", fontsize=14, fontweight="bold")
+        fig.suptitle(f"Solver effectiveness — flip mode: {mode}", fontsize=14, fontweight="bold")
         mode_rows = [r for r in rows if r["flip_mode"] == mode]
 
         # Panel 1: Success rate
@@ -318,6 +328,10 @@ def plot_results(
         ax1.set_xticks(flip_counts)
         ax1.grid(True, alpha=0.3)
         ax1.legend()
+        ax1_ber = ax1.secondary_xaxis("top")
+        ax1_ber.set_xticks(flip_counts)
+        ax1_ber.set_xticklabels([f"{fc/bit_length:.1%}" for fc in flip_counts], fontsize=7, rotation=45)
+        ax1_ber.set_xlabel("BER", fontsize=9)
 
         # Panel 2: Total combinations evaluated
         ax2 = axes[0][1]
@@ -357,21 +371,21 @@ def plot_results(
         ax3.grid(True, alpha=0.3)
         ax3.legend()
 
-        # Panel 4: Residual mismatches
+        # Panel 4: Solve time
         ax4 = axes[1][1]
         for hash_bits in hash_sizes:
             xs, ys, yerr = [], [], []
             for fc in flip_counts:
                 subset = [r for r in mode_rows if r["hash_bits"] == hash_bits and r["flip_count"] == fc]
-                vals = [float(r["mismatched_after"]) for r in subset]
+                vals = [float(r["solve_time_ms"]) for r in subset]
                 a = agg(vals)
                 xs.append(fc)
                 ys.append(a.mean)
                 yerr.append(a.sem)
             ax4.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit")
-        ax4.set_title("Residual mismatched nodes after correction")
+        ax4.set_title("Mean solve time (ms)")
         ax4.set_xlabel("Injected flips")
-        ax4.set_ylabel("Mean mismatched nodes after solver")
+        ax4.set_ylabel("Solve time (ms)")
         ax4.set_xticks(flip_counts)
         ax4.grid(True, alpha=0.3)
         ax4.legend()
@@ -382,12 +396,12 @@ def plot_results(
         plt.close()
         print(f"Saved plot to {out_path}")
 
-    # Comparison plot across modes (success rate only)
+    # Comparison plot across modes (search effort: burst vs random)
     if len(modes) == 2:
         fig, axes = plt.subplots(1, len(hash_sizes), figsize=(7 * len(hash_sizes), 5))
         if len(hash_sizes) == 1:
             axes = [axes]
-        fig.suptitle("Success rate: burst vs random flip placement", fontsize=14, fontweight="bold")
+        fig.suptitle("Search effort: burst vs random — Feistel shuffle equalises error patterns", fontsize=13, fontweight="bold")
         linestyles = {"random": "--", "burst": "-"}
         for ax, hash_bits in zip(axes, hash_sizes):
             for mode in modes:
@@ -395,12 +409,11 @@ def plot_results(
                 xs, ys, yerr = [], [], []
                 for fc in flip_counts:
                     subset = [r for r in mode_rows if r["hash_bits"] == hash_bits and r["flip_count"] == fc]
-                    rate = sum(r["fully_corrected"] for r in subset) / len(subset) if subset else float("nan")
-                    n = len(subset)
-                    se = math.sqrt(rate * (1 - rate) / n) if n > 1 and 0 < rate < 1 else 0.0
+                    vals = [float(r["total_combos_evaluated"]) for r in subset]
+                    a = agg(vals)
                     xs.append(fc)
-                    ys.append(rate)
-                    yerr.append(se)
+                    ys.append(a.mean)
+                    yerr.append(a.sem)
                 ax.errorbar(
                     xs, ys, yerr=yerr,
                     marker="o", linewidth=2, capsize=3,
@@ -409,8 +422,7 @@ def plot_results(
                 )
             ax.set_title(f"{hash_bits}-bit hash")
             ax.set_xlabel("Injected flips")
-            ax.set_ylabel("Success rate")
-            ax.set_ylim(-0.05, 1.05)
+            ax.set_ylabel("Mean combinations evaluated")
             ax.set_xticks(flip_counts)
             ax.grid(True, alpha=0.3)
             ax.legend()
@@ -434,6 +446,9 @@ def main() -> None:
         raise ValueError("--bit-length must be positive")
     if args.keys <= 0:
         raise ValueError("--keys must be positive")
+    if not (0 < args.max_ber <= 1.0):
+        raise ValueError("--max-ber must be in (0, 1]")
+    max_flip_count = max(1, int(args.max_ber * args.bit_length))
 
     modes = ["random", "burst"] if args.flip_mode == "both" else [args.flip_mode]
 
@@ -453,7 +468,8 @@ def main() -> None:
         "tail_policy": args.tail_policy,
         "keys": args.keys,
         "seed": args.seed,
-        "max_flip_count": MAX_FLIP_COUNT,
+        "max_flip_count": max_flip_count,
+        "max_ber": args.max_ber,
         "viz": args.viz,
         "viz_key_ids": sorted(viz_key_ids),
         "viz_flip_counts": sorted(viz_flip_counts),
@@ -468,6 +484,7 @@ def main() -> None:
         bits=bits,
         viz_key_ids=viz_key_ids,
         viz_flip_counts=viz_flip_counts,
+        max_flip_count=max_flip_count,
     )
 
     csv_path = os.path.join(out_dir, "figure_b_solver.csv")
@@ -478,7 +495,7 @@ def main() -> None:
             "flip_mode", "hash_bits", "flip_count", "key_id",
             "fully_corrected", "mismatched_before", "mismatched_after",
             "correction_steps", "total_combos_evaluated", "total_nodes_visited",
-            "max_flip_level_reached", "nodes_with_no_correction",
+            "max_flip_level_reached", "nodes_with_no_correction", "solve_time_ms",
         ],
     )
 
@@ -486,7 +503,7 @@ def main() -> None:
         return
 
     try:
-        plot_results(rows=rows, hash_sizes=hash_sizes, modes=modes, out_dir=out_dir)
+        plot_results(rows=rows, hash_sizes=hash_sizes, modes=modes, out_dir=out_dir, bit_length=args.bit_length, max_flip_count=max_flip_count)
     except ModuleNotFoundError as e:
         raise RuntimeError(
             "matplotlib is required for plotting. Install it or rerun with --no-plot."

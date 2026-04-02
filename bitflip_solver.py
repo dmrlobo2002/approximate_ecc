@@ -37,11 +37,6 @@ def _copy_grid(grid: list[list[int]]) -> list[list[int]]:
     return [row[:] for row in grid]
 
 
-def _flip_sources(grid: list[list[int]], source_indices: tuple[int, ...], meta: GridMeta) -> None:
-    for src_idx in source_indices:
-        r, c = source_index_to_grid_coord(src_idx, meta)
-        grid[r][c] ^= 1
-
 
 def _apply_combo_and_score(
     combo: tuple[int, ...],
@@ -162,22 +157,18 @@ def correct_with_dag(
         total_nodes_visited += 1
         src_indices = sorted(node.source_indices)
 
-        # Neighbor-pinning: bits shared with currently-matched neighbors are
-        # known correct, so restrict the flip search to the remaining "free" bits.
+        # Single pass over neighbors: collect bits from matched neighbors (pinned)
+        # and bits from mismatched neighbors (intersection candidates).
         good_neighbor_bits: set[int] = set()
-        for edge in dag.adj[node.node_id]:
-            neighbor_id = edge.dst if edge.src == node.node_id else edge.src
-            if live_nodes[neighbor_id].digest == baseline_map[neighbor_id].digest:
-                good_neighbor_bits |= dag.nodes[neighbor_id].source_indices
-        free_indices = sorted(node.source_indices - good_neighbor_bits)
-
-        # Intersection pass: bits covered by this mismatched node AND at least one
-        # mismatched opposite-axis neighbor are the most likely flip candidates.
         mismatched_neighbor_bits: set[int] = set()
         for edge in dag.adj[node.node_id]:
             neighbor_id = edge.dst if edge.src == node.node_id else edge.src
-            if live_nodes[neighbor_id].digest != baseline_map[neighbor_id].digest:
-                mismatched_neighbor_bits |= dag.nodes[neighbor_id].source_indices
+            neighbor_bits = dag.nodes[neighbor_id].source_indices
+            if live_nodes[neighbor_id].digest == baseline_map[neighbor_id].digest:
+                good_neighbor_bits |= neighbor_bits
+            else:
+                mismatched_neighbor_bits |= neighbor_bits
+        free_indices = sorted(node.source_indices - good_neighbor_bits)
         intersection_indices = sorted(node.source_indices & mismatched_neighbor_bits & set(free_indices))
 
         best_combo: tuple[int, ...] | None = None
