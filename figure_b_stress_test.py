@@ -273,6 +273,7 @@ def collect_rows(
                             "total_nodes_visited": trial["total_nodes_visited"],
                             "max_flip_level_reached": trial["max_flip_level_reached"],
                             "nodes_with_no_correction": trial["nodes_with_no_correction"],
+                            "solve_time_ms": trial["solve_time_ms"],
                         }
                     )
 
