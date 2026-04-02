@@ -1,13 +1,61 @@
 condition,flip_mode,rounds,ber_target,ber_actual,flip_count,success_rate,mean_combos,mean_solve_time_s,n_trials
-random + shuffle,random,8,0.001,0.015625,1,1.0,2.0,0.001523,5
-random + shuffle,random,8,0.004642,0.015625,1,1.0,2.0,0.001601,5
-random + shuffle,random,8,0.021544,0.015625,1,1.0,2.0,0.001551,5
-random + shuffle,random,8,0.1,0.09375,6,1.0,24.6,0.003406,5
-burst  + shuffle,burst,8,0.001,0.015625,1,1.0,2.0,0.001557,5
-burst  + shuffle,burst,8,0.004642,0.015625,1,1.0,2.0,0.001572,5
-burst  + shuffle,burst,8,0.021544,0.015625,1,1.0,2.0,0.001489,5
-burst  + shuffle,burst,8,0.1,0.09375,6,1.0,24.0,0.003412,5
-burst  + no shuffle,burst,0,0.001,0.015625,1,1.0,2.0,0.001476,5
-burst  + no shuffle,burst,0,0.004642,0.015625,1,1.0,2.0,0.001562,5
-burst  + no shuffle,burst,0,0.021544,0.015625,1,1.0,2.0,0.001486,5
-burst  + no shuffle,burst,0,0.1,0.09375,6,1.0,15.0,0.002604,5
+random + shuffle,random,8,0.001,0.003906,1,1.0,2.0,0.009027,50
+random + shuffle,random,8,0.001274,0.003906,1,1.0,2.0,0.008987,50
+random + shuffle,random,8,0.001624,0.003906,1,1.0,2.0,0.008941,50
+random + shuffle,random,8,0.002069,0.003906,1,1.0,2.0,0.008952,50
+random + shuffle,random,8,0.002637,0.003906,1,1.0,2.0,0.00893,50
+random + shuffle,random,8,0.00336,0.003906,1,1.0,2.0,0.008978,50
+random + shuffle,random,8,0.004281,0.003906,1,1.0,2.0,0.008988,50
+random + shuffle,random,8,0.005456,0.003906,1,1.0,2.0,0.00889,50
+random + shuffle,random,8,0.006952,0.007812,2,1.0,4.92,0.009707,50
+random + shuffle,random,8,0.008859,0.007812,2,1.0,4.92,0.009802,50
+random + shuffle,random,8,0.011288,0.011719,3,1.0,8.72,0.01083,50
+random + shuffle,random,8,0.014384,0.015625,4,1.0,13.76,0.012262,50
+random + shuffle,random,8,0.01833,0.019531,5,1.0,20.06,0.013953,50
+random + shuffle,random,8,0.023357,0.023438,6,1.0,26.08,0.015564,50
+random + shuffle,random,8,0.029764,0.03125,8,1.0,46.72,0.021019,50
+random + shuffle,random,8,0.037927,0.039062,10,1.0,77.14,0.028882,50
+random + shuffle,random,8,0.048329,0.046875,12,1.0,119.02,0.040111,50
+random + shuffle,random,8,0.061585,0.0625,16,1.0,247.7,0.073888,50
+random + shuffle,random,8,0.078476,0.078125,20,1.0,535.7,0.149291,50
+random + shuffle,random,8,0.1,0.101562,26,1.0,1332.86,0.358055,50
+burst  + shuffle,burst,8,0.001,0.003906,1,1.0,2.0,0.008931,50
+burst  + shuffle,burst,8,0.001274,0.003906,1,1.0,2.0,0.008936,50
+burst  + shuffle,burst,8,0.001624,0.003906,1,1.0,2.0,0.00894,50
+burst  + shuffle,burst,8,0.002069,0.003906,1,1.0,2.0,0.008872,50
+burst  + shuffle,burst,8,0.002637,0.003906,1,1.0,2.0,0.008926,50
+burst  + shuffle,burst,8,0.00336,0.003906,1,1.0,2.0,0.008994,50
+burst  + shuffle,burst,8,0.004281,0.003906,1,1.0,2.0,0.008988,50
+burst  + shuffle,burst,8,0.005456,0.003906,1,1.0,2.0,0.008994,50
+burst  + shuffle,burst,8,0.006952,0.007812,2,1.0,4.9,0.009822,50
+burst  + shuffle,burst,8,0.008859,0.007812,2,1.0,4.9,0.009813,50
+burst  + shuffle,burst,8,0.011288,0.011719,3,1.0,8.7,0.010882,50
+burst  + shuffle,burst,8,0.014384,0.015625,4,1.0,13.68,0.012275,50
+burst  + shuffle,burst,8,0.01833,0.019531,5,1.0,19.4,0.013794,50
+burst  + shuffle,burst,8,0.023357,0.023438,6,1.0,27.58,0.016075,50
+burst  + shuffle,burst,8,0.029764,0.03125,8,1.0,46.78,0.021071,50
+burst  + shuffle,burst,8,0.037927,0.039062,10,1.0,76.96,0.029138,50
+burst  + shuffle,burst,8,0.048329,0.046875,12,1.0,121.26,0.04091,50
+burst  + shuffle,burst,8,0.061585,0.0625,16,1.0,270.36,0.08051,50
+burst  + shuffle,burst,8,0.078476,0.078125,20,1.0,555.4,0.156204,50
+burst  + shuffle,burst,8,0.1,0.101562,26,1.0,1719.16,0.467241,50
+burst  + no shuffle,burst,0,0.001,0.003906,1,1.0,2.0,0.008851,50
+burst  + no shuffle,burst,0,0.001274,0.003906,1,1.0,2.0,0.008873,50
+burst  + no shuffle,burst,0,0.001624,0.003906,1,1.0,2.0,0.008865,50
+burst  + no shuffle,burst,0,0.002069,0.003906,1,1.0,2.0,0.008876,50
+burst  + no shuffle,burst,0,0.002637,0.003906,1,1.0,2.0,0.008868,50
+burst  + no shuffle,burst,0,0.00336,0.003906,1,1.0,2.0,0.008877,50
+burst  + no shuffle,burst,0,0.004281,0.003906,1,1.0,2.0,0.008837,50
+burst  + no shuffle,burst,0,0.005456,0.003906,1,1.0,2.0,0.008872,50
+burst  + no shuffle,burst,0,0.006952,0.007812,2,1.0,4.06,0.009432,50
+burst  + no shuffle,burst,0,0.008859,0.007812,2,1.0,4.06,0.009456,50
+burst  + no shuffle,burst,0,0.011288,0.011719,3,1.0,6.16,0.010009,50
+burst  + no shuffle,burst,0,0.014384,0.015625,4,1.0,8.52,0.010648,50
+burst  + no shuffle,burst,0,0.01833,0.019531,5,1.0,10.58,0.011179,50
+burst  + no shuffle,burst,0,0.023357,0.023438,6,1.0,12.78,0.011744,50
+burst  + no shuffle,burst,0,0.029764,0.03125,8,1.0,17.88,0.013208,50
+burst  + no shuffle,burst,0,0.037927,0.039062,10,1.0,22.52,0.014461,50
+burst  + no shuffle,burst,0,0.048329,0.046875,12,1.0,27.34,0.015766,50
+burst  + no shuffle,burst,0,0.061585,0.0625,16,1.0,39.08,0.019007,50
+burst  + no shuffle,burst,0,0.078476,0.078125,20,1.0,49.22,0.021742,50
+burst  + no shuffle,burst,0,0.1,0.101562,26,1.0,65.78,0.026169,50
