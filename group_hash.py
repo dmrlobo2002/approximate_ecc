@@ -91,6 +91,73 @@ def _iter_groups(length: int, group_size: int, tail_policy: TailPolicy) -> list[
     return groups
 
 
+@dataclass(frozen=True)
+class GroupHashContext:
+    meta: GridMeta
+    row_group_size: int
+    col_group_size: int
+    hash_bits: int
+    tail_policy: TailPolicy
+    row_groups: tuple[tuple[int, int], ...]
+    col_groups: tuple[tuple[int, int], ...]
+    src_to_node_ids: dict[int, tuple[str, ...]]
+
+
+def build_group_context(
+    meta: GridMeta,
+    row_group_size: int,
+    col_group_size: int,
+    hash_bits: int,
+    tail_policy: TailPolicy = "include_partial",
+) -> GroupHashContext:
+    row_groups = tuple(_iter_groups(meta.n, row_group_size, tail_policy))
+    col_groups = tuple(_iter_groups(meta.n, col_group_size, tail_policy))
+    src_to_node_ids: dict[int, tuple[str, ...]] = {}
+    for src_idx in range(meta.original_length):
+        linear = meta.source_to_grid[src_idx]
+        r, c = linear // meta.n, linear % meta.n
+        nids: list[str] = []
+        row_gidx = r // row_group_size
+        col_gidx = c // col_group_size
+        if row_gidx < len(row_groups):
+            nids.append(f"row_{row_gidx}")
+        if col_gidx < len(col_groups):
+            nids.append(f"col_{col_gidx}")
+        src_to_node_ids[src_idx] = tuple(nids)
+    return GroupHashContext(
+        meta=meta,
+        row_group_size=row_group_size,
+        col_group_size=col_group_size,
+        hash_bits=hash_bits,
+        tail_policy=tail_policy,
+        row_groups=row_groups,
+        col_groups=col_groups,
+        src_to_node_ids=src_to_node_ids,
+    )
+
+
+def recompute_node(old_node: "HashNode", grid: list[list[int]], ctx: GroupHashContext) -> "HashNode":
+    n = ctx.meta.n
+    if old_node.axis == "row":
+        r0, r1 = ctx.row_groups[old_node.group_index]
+        bits = [grid[r][c] for r in range(r0, r1) for c in range(n)]
+        if ctx.tail_policy == "pad_with_zeros" and (r1 - r0) < ctx.row_group_size:
+            bits.extend([0] * (ctx.row_group_size - (r1 - r0)) * n)
+    else:
+        c0, c1 = ctx.col_groups[old_node.group_index]
+        bits = [grid[r][c] for c in range(c0, c1) for r in range(n)]
+        if ctx.tail_policy == "pad_with_zeros" and (c1 - c0) < ctx.col_group_size:
+            bits.extend([0] * (ctx.col_group_size - (c1 - c0)) * n)
+    return HashNode(
+        node_id=old_node.node_id,
+        axis=old_node.axis,
+        group_index=old_node.group_index,
+        hash_bits=old_node.hash_bits,
+        digest=_crc_hash(bits, ctx.hash_bits),
+        source_indices=old_node.source_indices,
+    )
+
+
 def build_hash_nodes(
     grid: list[list[int]],
     meta: GridMeta,

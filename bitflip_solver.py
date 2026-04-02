@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from itertools import combinations
-from group_hash import HashNode, TailPolicy, build_hash_nodes
+from group_hash import GroupHashContext, HashNode, TailPolicy, build_group_context, build_hash_nodes, recompute_node
 from grid_shuffle import GridMeta, source_index_to_grid_coord
 from hash_dag import HashGraph, build_hash_graph
 from experiments.common import Timer
@@ -43,26 +43,65 @@ def _flip_sources(grid: list[list[int]], source_indices: tuple[int, ...], meta: 
         grid[r][c] ^= 1
 
 
-def _score_candidate(
-    candidate_grid: list[list[int]],
-    baseline_nodes: list[HashNode],
-    meta: GridMeta,
-    row_group_size: int,
-    col_group_size: int,
-    hash_bits: int,
-    tail_policy: TailPolicy,
-) -> tuple[int, list[HashNode]]:
-    candidate_nodes = build_hash_nodes(
-        grid=candidate_grid,
-        meta=meta,
-        row_group_size=row_group_size,
-        col_group_size=col_group_size,
-        hash_bits=hash_bits,
-        tail_policy=tail_policy,
+def _apply_combo_and_score(
+    combo: tuple[int, ...],
+    target_node_id: str,
+    working_grid: list[list[int]],
+    live_nodes: dict[str, HashNode],
+    live_matched: int,
+    baseline_map: dict[str, HashNode],
+    ctx: GroupHashContext,
+) -> tuple[int, bool]:
+    affected_ids: set[str] = set()
+    for src_idx in combo:
+        for nid in ctx.src_to_node_ids[src_idx]:
+            affected_ids.add(nid)
+    saved = {nid: live_nodes[nid] for nid in affected_ids}
+    for src_idx in combo:
+        r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+        working_grid[r][c] ^= 1
+    for nid in affected_ids:
+        live_nodes[nid] = recompute_node(live_nodes[nid], working_grid, ctx)
+    if live_nodes[target_node_id].digest != baseline_map[target_node_id].digest:
+        for nid, old_node in saved.items():
+            live_nodes[nid] = old_node
+        for src_idx in combo:
+            r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+            working_grid[r][c] ^= 1
+        return -1, False
+    delta = sum(
+        int(live_nodes[nid].digest == baseline_map[nid].digest) - int(saved[nid].digest == baseline_map[nid].digest)
+        for nid in affected_ids
     )
-    baseline_map = _node_map(baseline_nodes)
-    matched = sum(1 for node in candidate_nodes if baseline_map[node.node_id].digest == node.digest)
-    return matched, candidate_nodes
+    for nid, old_node in saved.items():
+        live_nodes[nid] = old_node
+    for src_idx in combo:
+        r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+        working_grid[r][c] ^= 1
+    return live_matched + delta, True
+
+
+def _commit_combo(
+    combo: tuple[int, ...],
+    working_grid: list[list[int]],
+    live_nodes: dict[str, HashNode],
+    live_matched: int,
+    baseline_map: dict[str, HashNode],
+    ctx: GroupHashContext,
+) -> int:
+    affected_ids: set[str] = set()
+    for src_idx in combo:
+        for nid in ctx.src_to_node_ids[src_idx]:
+            affected_ids.add(nid)
+    for src_idx in combo:
+        r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+        working_grid[r][c] ^= 1
+    for nid in affected_ids:
+        old_matched = live_nodes[nid].digest == baseline_map[nid].digest
+        live_nodes[nid] = recompute_node(live_nodes[nid], working_grid, ctx)
+        new_matched = live_nodes[nid].digest == baseline_map[nid].digest
+        live_matched += int(new_matched) - int(old_matched)
+    return live_matched
 
 
 def correct_with_dag(
@@ -104,6 +143,10 @@ def correct_with_dag(
     baseline_map = _node_map(baseline_nodes)
     ordered_nodes = sorted(dag.nodes.values(), key=lambda n: (n.covered_bits, n.node_id))
 
+    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy)
+    live_nodes: dict[str, HashNode] = _node_map(current_nodes)
+    live_matched = sum(1 for nid, n in live_nodes.items() if baseline_map[nid].digest == n.digest)
+
     # --- Metric counters ---
     total_combos_evaluated = 0
     total_nodes_visited = 0
@@ -113,16 +156,7 @@ def correct_with_dag(
     _timer = Timer()
     _timer.__enter__()
     for node in ordered_nodes:
-        latest_nodes = build_hash_nodes(
-            grid=working_grid,
-            meta=meta,
-            row_group_size=row_group_size,
-            col_group_size=col_group_size,
-            hash_bits=hash_bits,
-            tail_policy=tail_policy,
-        )
-        latest_map = _node_map(latest_nodes)
-        if latest_map[node.node_id].digest == baseline_map[node.node_id].digest:
+        if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
             continue
 
         total_nodes_visited += 1
@@ -133,19 +167,27 @@ def correct_with_dag(
         good_neighbor_bits: set[int] = set()
         for edge in dag.adj[node.node_id]:
             neighbor_id = edge.dst if edge.src == node.node_id else edge.src
-            if latest_map[neighbor_id].digest == baseline_map[neighbor_id].digest:
+            if live_nodes[neighbor_id].digest == baseline_map[neighbor_id].digest:
                 good_neighbor_bits |= dag.nodes[neighbor_id].source_indices
         free_indices = sorted(node.source_indices - good_neighbor_bits)
 
-        best_grid: list[list[int]] | None = None
-        best_nodes: list[HashNode] | None = None
+        # Intersection pass: bits covered by this mismatched node AND at least one
+        # mismatched opposite-axis neighbor are the most likely flip candidates.
+        mismatched_neighbor_bits: set[int] = set()
+        for edge in dag.adj[node.node_id]:
+            neighbor_id = edge.dst if edge.src == node.node_id else edge.src
+            if live_nodes[neighbor_id].digest != baseline_map[neighbor_id].digest:
+                mismatched_neighbor_bits |= dag.nodes[neighbor_id].source_indices
+        intersection_indices = sorted(node.source_indices & mismatched_neighbor_bits & set(free_indices))
+
+        best_combo: tuple[int, ...] | None = None
         best_match = -1
         best_flip_count = None
 
-        # Pass 1: search only over free (unpinned) bits.
-        # Pass 2 (fallback): if pass 1 found nothing and pinning excluded bits,
-        #                     retry over all source bits.
-        search_passes = [free_indices]
+        search_passes: list[list[int]] = []
+        if intersection_indices and intersection_indices != free_indices:
+            search_passes.append(intersection_indices)
+        search_passes.append(free_indices)
         if free_indices != src_indices:
             search_passes.append(src_indices)
 
@@ -154,56 +196,37 @@ def correct_with_dag(
                 found_for_level = False
                 for combo in combinations(candidate_indices, flips):
                     total_combos_evaluated += 1
-                    candidate = _copy_grid(working_grid)
-                    _flip_sources(candidate, combo, meta)
-                    score, cand_nodes = _score_candidate(
-                        candidate,
-                        baseline_nodes=baseline_nodes,
-                        meta=meta,
-                        row_group_size=row_group_size,
-                        col_group_size=col_group_size,
-                        hash_bits=hash_bits,
-                        tail_policy=tail_policy,
+                    score, fixed = _apply_combo_and_score(
+                        combo, node.node_id, working_grid, live_nodes, live_matched, baseline_map, ctx
                     )
-                    cand_map = _node_map(cand_nodes)
-                    if cand_map[node.node_id].digest != baseline_map[node.node_id].digest:
+                    if not fixed:
                         continue
                     found_for_level = True
                     if score > best_match:
                         best_match = score
-                        best_grid = candidate
-                        best_nodes = cand_nodes
+                        best_combo = combo
                         best_flip_count = flips
                     elif score == best_match and best_flip_count is not None and flips < best_flip_count:
-                        best_grid = candidate
-                        best_nodes = cand_nodes
+                        best_combo = combo
                         best_flip_count = flips
                 if found_for_level:
                     if flips > max_flip_level_reached:
                         max_flip_level_reached = flips
                     break
-            if best_grid is not None:
+            if best_combo is not None:
                 break
 
-        if best_grid is not None and best_nodes is not None:
-            working_grid = best_grid
+        if best_combo is not None:
+            live_matched = _commit_combo(best_combo, working_grid, live_nodes, live_matched, baseline_map, ctx)
             steps.append(f"Corrected {node.node_id} using {best_flip_count} flips.")
             if record_step_snapshots:
-                step_mismatched = _mismatched_ids(best_nodes, baseline_nodes)
+                step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
                 step_snapshots.append((node.node_id, step_mismatched))
         else:
             nodes_with_no_correction += 1
             steps.append(f"No correction found for {node.node_id} after full enumeration.")
 
-    final_nodes = build_hash_nodes(
-        grid=working_grid,
-        meta=meta,
-        row_group_size=row_group_size,
-        col_group_size=col_group_size,
-        hash_bits=hash_bits,
-        tail_policy=tail_policy,
-    )
-    mismatched_after = _mismatched_ids(final_nodes, baseline_nodes)
+    mismatched_after = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
     _timer.__exit__(None, None, None)
 
     return SolveResult(

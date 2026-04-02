@@ -1,8 +1,8 @@
 {
   "ber_max": 0.1,
   "ber_min": 0.001,
-  "ber_steps": 8,
-  "bit_length": 64,
+  "ber_steps": 5,
+  "bit_length": 256,
   "group_configs": [
     [
       1,
@@ -21,8 +21,7 @@
     ]
   ],
   "hash_sizes": [
-    16,
-    32
+    16
   ],
   "keys": 10,
   "rounds": 8,
