@@ -1,3 +1,32 @@
+# Output files
 *.png
 *.csv
+
+# Python build/cache artifacts
+__pycache__/
+*.py[cod]
+
+# Virtual environments
 venv/
+.venv/
+env/
+
+# IDE / editor files
+.cursor/
+.vscode/
+.idea/
+
+# Test cache
+.pytest_cache/
+
+# Generated experiment outputs
+results/
+dag_viz/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# CAD tool config
+.cdsinit
+cds.lib
