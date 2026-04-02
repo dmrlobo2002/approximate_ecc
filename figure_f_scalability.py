@@ -27,7 +27,6 @@ from experiments.common import (
 GROUP_CONFIGS = [
     (1, 1, "g=1"),
     (2, 2, "g=2"),
-    (4, 4, "g=4"),
 ]
 
 

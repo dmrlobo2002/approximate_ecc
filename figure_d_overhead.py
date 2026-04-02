@@ -88,7 +88,7 @@ def main() -> None:
         "source": "analytic",
     })
 
-    for t in [2, 4, 8, 16]:
+    for t in [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]:
         b = bch_overhead(args.bit_length, t)
         ref_points.append({
             "scheme": b["scheme"],
@@ -183,6 +183,8 @@ def main() -> None:
     ax.set_title(f"Overhead vs. Correction Capability — {args.bit_length}-bit data word")
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0%}" if x >= 0.01 else f"{x:.2%}"))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.1%}" if y >= 0.001 else f"{y:.3%}"))
     ax.grid(True, alpha=0.3, which="both")
     ax.legend(fontsize=8, loc="upper left")
     plt.tight_layout()
