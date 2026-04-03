@@ -47,6 +47,8 @@ def parse_args() -> argparse.Namespace:
                    choices=["include_partial", "pad_with_zeros", "drop_partial"])
     p.add_argument("--out-dir", type=str, default="results/fig_f")
     p.add_argument("--no-plot", action="store_true")
+    p.add_argument("--group-sizes", type=str, default="1,2",
+                   help="Comma-separated group sizes to test, e.g. '1' or '1,2'")
     return p.parse_args()
 
 
@@ -86,6 +88,10 @@ def run_ber_point(
 def main() -> None:
     args = parse_args()
     lengths = parse_int_list(args.lengths)
+    allowed_gs = {int(g) for g in args.group_sizes.split(",") if g.strip()}
+    group_configs = [(r, c, lbl) for r, c, lbl in GROUP_CONFIGS if r in allowed_gs]
+    if not group_configs:
+        raise ValueError(f"--group-sizes {args.group_sizes!r} matched no configs")
     ensure_dir(args.out_dir)
 
     ber_points = [
@@ -109,7 +115,7 @@ def main() -> None:
     threshold_rows: list[dict[str, Any]] = []
 
     for bit_length in lengths:
-        for row_gs, col_gs, cfg_label in GROUP_CONFIGS:
+        for row_gs, col_gs, cfg_label in group_configs:
             overhead = compute_overhead_ratio(bit_length, row_gs, col_gs, args.hash_bits)
             best_threshold_ber: float | None = None
 
@@ -186,7 +192,7 @@ def main() -> None:
     ax_l, ax_r = axes
 
     # Left: BER threshold vs bit-length
-    for _, _, cfg_label in GROUP_CONFIGS:
+    for _, _, cfg_label in group_configs:
         subset = [r for r in threshold_rows if r["group_config"] == cfg_label]
         xs = [r["bit_length"] for r in subset]
         ys = [r["threshold_ber"] if r["threshold_ber"] else 0.0 for r in subset]

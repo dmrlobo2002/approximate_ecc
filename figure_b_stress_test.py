@@ -23,8 +23,8 @@ from experiments.common import (
 
 DEFAULT_BIT_LENGTH = 256
 DEFAULT_ROUNDS = 8
-DEFAULT_ROW_GROUP = 2
-DEFAULT_COL_GROUP = 2
+DEFAULT_ROW_GROUP = 1
+DEFAULT_COL_GROUP = 1
 DEFAULT_TAIL_POLICY = "include_partial"
 DEFAULT_MAX_BER = 0.05
 FLIP_MODES = ["random", "burst", "both"]

@@ -48,6 +48,8 @@ def parse_args() -> argparse.Namespace:
                    choices=["include_partial", "pad_with_zeros", "drop_partial"])
     p.add_argument("--out-dir", type=str, default="results/fig_c")
     p.add_argument("--no-plot", action="store_true")
+    p.add_argument("--group-sizes", type=str, default="1,2,4",
+                   help="Comma-separated group sizes to test, e.g. '1' or '1,2'")
     return p.parse_args()
 
 
@@ -96,6 +98,10 @@ def main() -> None:
     for h in hash_sizes:
         if h not in {8, 16, 32}:
             raise ValueError(f"hash size must be 8/16/32, got {h}")
+    allowed_gs = {int(g) for g in args.group_sizes.split(",") if g.strip()}
+    group_configs = [(r, c, lbl) for r, c, lbl in GROUP_CONFIGS if r in allowed_gs]
+    if not group_configs:
+        raise ValueError(f"--group-sizes {args.group_sizes!r} matched no configs")
 
     ensure_dir(args.out_dir)
 
@@ -117,14 +123,14 @@ def main() -> None:
         "keys": args.keys,
         "seed": args.seed,
         "tail_policy": args.tail_policy,
-        "group_configs": [(r, c, lbl) for r, c, lbl in GROUP_CONFIGS],
+        "group_configs": [(r, c, lbl) for r, c, lbl in group_configs],
     }
     write_json(os.path.join(args.out_dir, "config.json"), config)
 
     rows: list[dict[str, Any]] = []
 
     for hash_bits in hash_sizes:
-        for row_gs, col_gs, cfg_label in GROUP_CONFIGS:
+        for row_gs, col_gs, cfg_label in group_configs:
             for ber in ber_points:
                 flip_count = ber_to_flip_count(ber, args.bit_length)
                 actual_ber = flip_count / args.bit_length
@@ -206,7 +212,7 @@ def main() -> None:
         ax_bot = axes[1][col_idx]
         subset = [r for r in rows if r["hash_bits"] == hash_bits]
 
-        for (row_gs, col_gs, cfg_label), marker, color in zip(GROUP_CONFIGS, markers, colors):
+        for (row_gs, col_gs, cfg_label), marker, color in zip(group_configs, markers, colors):
             cfg_rows = sorted(
                 [r for r in subset if r["group_config"] == cfg_label],
                 key=lambda r: r["ber_actual"],
