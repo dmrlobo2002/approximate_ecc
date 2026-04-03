@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from bitflip_solver import correct_with_dag
@@ -48,6 +49,12 @@ def parse_args() -> argparse.Namespace:
                    choices=["include_partial", "pad_with_zeros", "drop_partial"])
     p.add_argument("--out-dir", type=str, default="results/fig_e")
     p.add_argument("--no-plot", action="store_true")
+    p.add_argument("--max-combos", type=int, default=None,
+                   help="Per-trial combo budget cap (None = unlimited)")
+    p.add_argument("--parallel", action="store_true",
+                   help="Run trials in parallel using multiple processes")
+    p.add_argument("--workers", type=int, default=0,
+                   help="Number of parallel workers (0 = one per task, up to cpu_count)")
     return p.parse_args()
 
 
@@ -70,6 +77,7 @@ def run_trial(
     col_group_size: int,
     hash_bits: int,
     tail_policy: str,
+    max_combos: int | None = None,
 ) -> dict[str, Any]:
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
     current_grid = [row[:] for row in baseline_grid]
@@ -85,6 +93,7 @@ def run_trial(
         col_group_size=col_group_size,
         hash_bits=hash_bits,
         tail_policy=tail_policy,
+        max_combos=max_combos,
     )
     restored = grid_to_bits(result.corrected_grid, meta, key=key)
     return {
@@ -94,6 +103,12 @@ def run_trial(
         "total_combos_evaluated": result.total_combos_evaluated,
         "solve_time_seconds": result.solve_time_seconds,
     }
+
+
+def _trial_task(task: tuple) -> dict:
+    """Top-level wrapper so ProcessPoolExecutor can pickle the work unit."""
+    bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos = task
+    return run_trial(bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos)
 
 
 def main() -> None:
@@ -120,27 +135,36 @@ def main() -> None:
         "conditions": CONDITIONS,
     })
 
-    rows: list[dict[str, Any]] = []
+    all_tasks: list[tuple] = []
     for flip_mode, rounds, label in CONDITIONS:
         for ber in ber_points:
             flip_count = max(1, round(ber * args.bit_length))
-            actual_ber = flip_count / args.bit_length
-            trial_results = []
             for key_id in range(args.keys):
                 key = stable_key(args.seed, key_id)
                 rng = stable_rng(args.seed, key_id, flip_count, flip_mode, rounds)
                 flip_indices = get_flip_indices(flip_count, args.bit_length, flip_mode, rng)
-                t = run_trial(
-                    bits=bits,
-                    key=key,
-                    rounds=rounds,
-                    flip_indices=flip_indices,
-                    row_group_size=args.row_group_size,
-                    col_group_size=args.col_group_size,
-                    hash_bits=args.hash_bits,
-                    tail_policy=args.tail_policy,
-                )
-                trial_results.append(t)
+                all_tasks.append((
+                    bits, key, rounds, flip_indices,
+                    args.row_group_size, args.col_group_size,
+                    args.hash_bits, args.tail_policy, args.max_combos,
+                ))
+
+    if args.parallel:
+        n_workers = args.workers if args.workers > 0 else min(len(all_tasks), os.cpu_count() or 1)
+        print(f"Running {len(all_tasks)} trials across {n_workers} workers...")
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            flat_results = list(executor.map(_trial_task, all_tasks))
+    else:
+        flat_results = [_trial_task(t) for t in all_tasks]
+
+    rows: list[dict[str, Any]] = []
+    idx = 0
+    for flip_mode, rounds, label in CONDITIONS:
+        for ber in ber_points:
+            flip_count = max(1, round(ber * args.bit_length))
+            actual_ber = flip_count / args.bit_length
+            trial_results = flat_results[idx: idx + args.keys]
+            idx += args.keys
 
             success_rate = sum(1 for t in trial_results if t["fully_corrected"]) / len(trial_results)
             combos_a = agg([float(t["total_combos_evaluated"]) for t in trial_results])

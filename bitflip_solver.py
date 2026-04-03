@@ -108,6 +108,7 @@ def correct_with_dag(
     hash_bits: int,
     tail_policy: TailPolicy = "include_partial",
     record_step_snapshots: bool = False,
+    max_combos: int | None = None,
 ) -> SolveResult:
     baseline_nodes = build_hash_nodes(
         grid=baseline_grid,
@@ -182,11 +183,15 @@ def correct_with_dag(
         if free_indices != src_indices:
             search_passes.append(src_indices)
 
+        budget_exhausted = False
         for candidate_indices in search_passes:
             for flips in range(len(candidate_indices) + 1):
                 found_for_level = False
                 for combo in combinations(candidate_indices, flips):
                     total_combos_evaluated += 1
+                    if max_combos is not None and total_combos_evaluated > max_combos:
+                        budget_exhausted = True
+                        break
                     score, fixed = _apply_combo_and_score(
                         combo, node.node_id, working_grid, live_nodes, live_matched, baseline_map, ctx
                     )
@@ -200,16 +205,20 @@ def correct_with_dag(
                     elif score == best_match and best_flip_count is not None and flips < best_flip_count:
                         best_combo = combo
                         best_flip_count = flips
+                if budget_exhausted:
+                    break
                 if found_for_level:
                     if flips > max_flip_level_reached:
                         max_flip_level_reached = flips
                     break
-            if best_combo is not None:
+            if budget_exhausted or best_combo is not None:
                 break
 
         if best_combo is not None:
             live_matched = _commit_combo(best_combo, working_grid, live_nodes, live_matched, baseline_map, ctx)
             steps.append(f"Corrected {node.node_id} using {best_flip_count} flips.")
+            if live_matched == len(baseline_map):
+                break
             if record_step_snapshots:
                 step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
                 step_snapshots.append((node.node_id, step_mismatched))

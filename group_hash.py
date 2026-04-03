@@ -38,15 +38,24 @@ def _crc8(data: bytes, poly: int = 0x07, init: int = 0x00, xor_out: int = 0x00) 
     return crc ^ xor_out
 
 
-def _crc16(data: bytes, poly: int = 0x1021, init: int = 0xFFFF, xor_out: int = 0x0000) -> int:
+def _make_crc16_table(poly: int = 0x1021) -> list:
+    table = []
+    for byte in range(256):
+        crc = byte << 8
+        for _ in range(8):
+            crc = ((crc << 1) ^ poly) if (crc & 0x8000) else (crc << 1)
+            crc &= 0xFFFF
+        table.append(crc)
+    return table
+
+
+_CRC16_TABLE = _make_crc16_table()
+
+
+def _crc16(data: bytes, init: int = 0xFFFF, xor_out: int = 0x0000) -> int:
     crc = init
     for byte in data:
-        crc ^= byte << 8
-        for _ in range(8):
-            if crc & 0x8000:
-                crc = ((crc << 1) ^ poly) & 0xFFFF
-            else:
-                crc = (crc << 1) & 0xFFFF
+        crc = ((crc << 8) ^ _CRC16_TABLE[(crc >> 8) ^ byte]) & 0xFFFF
     return crc ^ xor_out
 
 

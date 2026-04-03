@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import math
 import os
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from bitflip_solver import correct_with_dag
@@ -48,6 +49,12 @@ def parse_args() -> argparse.Namespace:
                    choices=["include_partial", "pad_with_zeros", "drop_partial"])
     p.add_argument("--out-dir", type=str, default="results/fig_c")
     p.add_argument("--no-plot", action="store_true")
+    p.add_argument("--max-combos", type=int, default=None,
+                   help="Per-trial combo budget cap (None = unlimited)")
+    p.add_argument("--parallel", action="store_true",
+                   help="Run BER trials in parallel using multiple processes")
+    p.add_argument("--workers", type=int, default=0,
+                   help="Number of parallel workers (0 = one per task, up to cpu_count)")
     p.add_argument("--group-sizes", type=str, default="1,2,4",
                    help="Comma-separated group sizes to test, e.g. '1' or '1,2'")
     return p.parse_args()
@@ -66,6 +73,7 @@ def run_trial(
     col_group_size: int,
     hash_bits: int,
     tail_policy: str,
+    max_combos: int | None = None,
 ) -> dict[str, Any]:
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
     current_grid = [row[:] for row in baseline_grid]
@@ -81,6 +89,7 @@ def run_trial(
         col_group_size=col_group_size,
         hash_bits=hash_bits,
         tail_policy=tail_policy,
+        max_combos=max_combos,
     )
     restored = grid_to_bits(result.corrected_grid, meta, key=key)
     return {
@@ -90,6 +99,12 @@ def run_trial(
         "mismatched_before": len(result.mismatched_before),
         "mismatched_after": len(result.mismatched_after),
     }
+
+
+def _trial_task(task: tuple) -> dict[str, Any]:
+    """Top-level wrapper so ProcessPoolExecutor can pickle the work unit."""
+    bits, key, rounds, flip_indices, row_gs, col_gs, hash_bits, tail_policy, max_combos = task
+    return run_trial(bits, key, rounds, flip_indices, row_gs, col_gs, hash_bits, tail_policy, max_combos)
 
 
 def main() -> None:
@@ -127,29 +142,43 @@ def main() -> None:
     }
     write_json(os.path.join(args.out_dir, "config.json"), config)
 
-    rows: list[dict[str, Any]] = []
-
+    # Build all tasks and their metadata upfront so RNG state is determined
+    # in the main process regardless of parallel/serial execution.
+    all_tasks: list[tuple] = []
+    all_metas: list[tuple] = []
     for hash_bits in hash_sizes:
         for row_gs, col_gs, cfg_label in group_configs:
             for ber in ber_points:
                 flip_count = ber_to_flip_count(ber, args.bit_length)
                 actual_ber = flip_count / args.bit_length
-                trial_results = []
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
                     rng = stable_rng(args.seed, key_id, flip_count, hash_bits, row_gs, col_gs)
                     flip_indices = rng.sample(range(args.bit_length), min(flip_count, args.bit_length))
-                    t = run_trial(
-                        bits=bits,
-                        key=key,
-                        rounds=args.rounds,
-                        flip_indices=flip_indices,
-                        row_group_size=row_gs,
-                        col_group_size=col_gs,
-                        hash_bits=hash_bits,
-                        tail_policy=args.tail_policy,
-                    )
-                    trial_results.append(t)
+                    all_tasks.append((
+                        bits, key, args.rounds, flip_indices,
+                        row_gs, col_gs, hash_bits, args.tail_policy, args.max_combos,
+                    ))
+                    all_metas.append((hash_bits, row_gs, col_gs, cfg_label, actual_ber, flip_count, ber))
+
+    if args.parallel:
+        n_workers = args.workers if args.workers > 0 else min(len(all_tasks), os.cpu_count() or 1)
+        print(f"Running {len(all_tasks)} trials across {n_workers} workers...")
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            flat_results = list(executor.map(_trial_task, all_tasks))
+    else:
+        flat_results = [_trial_task(t) for t in all_tasks]
+
+    # Aggregate results in original order.
+    rows: list[dict[str, Any]] = []
+    idx = 0
+    for hash_bits in hash_sizes:
+        for row_gs, col_gs, cfg_label in group_configs:
+            for ber in ber_points:
+                flip_count = ber_to_flip_count(ber, args.bit_length)
+                actual_ber = flip_count / args.bit_length
+                trial_results = flat_results[idx: idx + args.keys]
+                idx += args.keys
 
                 success_rate = sum(1 for t in trial_results if t["fully_corrected"]) / len(trial_results)
                 combos_agg = agg([float(t["total_combos_evaluated"]) for t in trial_results])

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import math
 import os
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from bitflip_solver import correct_with_dag
@@ -69,6 +70,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=0, help="Seed for deterministic key and flip derivation")
     p.add_argument("--out-dir", type=str, default="results/fig_b", help="Output directory")
     p.add_argument("--no-plot", action="store_true", help="Write CSV only (skip PNG plotting)")
+    p.add_argument("--max-combos", type=int, default=None,
+                   help="Per-trial combo budget cap (None = unlimited)")
+    p.add_argument("--parallel", action="store_true",
+                   help="Run trials in parallel using multiple processes (disables --viz)")
+    p.add_argument("--workers", type=int, default=0,
+                   help="Number of parallel workers (0 = one per task, up to cpu_count)")
     # --- Viz flags (mirrors the demo) ---
     p.add_argument("--viz", action="store_true", help="Render per-step DAG PNGs colored by mismatched nodes")
     p.add_argument("--viz-dir", type=str, default="dag_viz", help="Output directory for DAG step PNGs")
@@ -114,6 +121,7 @@ def run_trial(
     hash_bits: int,
     tail_policy: str,
     record_step_snapshots: bool = False,
+    max_combos: int | None = None,
 ) -> dict[str, Any]:
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
     current_grid = [row[:] for row in baseline_grid]
@@ -131,6 +139,7 @@ def run_trial(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
         record_step_snapshots=record_step_snapshots,
+        max_combos=max_combos,
     )
 
     restored_bits = grid_to_bits(result.corrected_grid, meta, key=key)
@@ -150,6 +159,13 @@ def run_trial(
         "_baseline_grid": baseline_grid,
         "_meta": meta,
     }
+
+
+def _trial_task(task: tuple) -> dict[str, Any]:
+    """Top-level wrapper so ProcessPoolExecutor can pickle the work unit (no viz)."""
+    bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos = task
+    return run_trial(bits, key, rounds, flip_indices, row_group_size, col_group_size,
+                     hash_bits, tail_policy, record_step_snapshots=False, max_combos=max_combos)
 
 
 def maybe_render_viz(
@@ -211,71 +227,76 @@ def collect_rows(
     viz_flip_counts: set[int],
     max_flip_count: int,
 ) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+    if args.parallel and args.viz:
+        print("Warning: --viz is not supported with --parallel; running serially.")
+        args.parallel = False
 
+    # Build all tasks upfront so RNG state is determined in the main process.
+    all_tasks: list[tuple] = []
+    all_metas: list[tuple] = []
     for mode in modes:
         for hash_bits in hash_sizes:
             for flip_count in range(1, max_flip_count + 1):
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
                     rng = stable_rng(args.seed, key_id, flip_count, hash_bits, mode)
-                    flip_indices = get_flip_indices(
-                        flip_count=flip_count,
-                        bit_length=args.bit_length,
-                        mode=mode,
-                        rng=rng,
-                    )
-
-                    # Only record snapshots for trials we intend to visualize
+                    flip_indices = get_flip_indices(flip_count, args.bit_length, mode, rng)
                     want_viz = (
                         args.viz
                         and key_id in viz_key_ids
                         and (not viz_flip_counts or flip_count in viz_flip_counts)
                     )
+                    all_tasks.append((
+                        bits, key, args.rounds, flip_indices,
+                        args.row_group_size, args.col_group_size,
+                        hash_bits, args.tail_policy, args.max_combos,
+                    ))
+                    all_metas.append((mode, hash_bits, flip_count, key_id, want_viz))
 
-                    trial = run_trial(
-                        bits=bits,
-                        key=key,
-                        rounds=args.rounds,
-                        flip_indices=flip_indices,
-                        row_group_size=args.row_group_size,
-                        col_group_size=args.col_group_size,
-                        hash_bits=hash_bits,
-                        tail_policy=args.tail_policy,
-                        record_step_snapshots=want_viz,
-                    )
+    if args.parallel:
+        n_workers = args.workers if args.workers > 0 else min(len(all_tasks), os.cpu_count() or 1)
+        print(f"Running {len(all_tasks)} trials across {n_workers} workers...")
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            flat_results = list(executor.map(_trial_task, all_tasks))
+    else:
+        flat_results = []
+        for task, (mode, hash_bits, flip_count, key_id, want_viz) in zip(all_tasks, all_metas):
+            bits_, key, rounds, flip_indices, rgs, cgs, hb, tp, mc = task
+            trial = run_trial(bits_, key, rounds, flip_indices, rgs, cgs, hb, tp,
+                              record_step_snapshots=want_viz, max_combos=mc)
+            if want_viz:
+                maybe_render_viz(
+                    trial=trial, hash_bits=hash_bits, flip_count=flip_count,
+                    key_id=key_id, mode=mode, row_group_size=args.row_group_size,
+                    col_group_size=args.col_group_size, tail_policy=args.tail_policy,
+                    viz_dir=args.viz_dir, viz_prefix=args.viz_prefix,
+                )
+            flat_results.append(trial)
 
-                    if want_viz:
-                        maybe_render_viz(
-                            trial=trial,
-                            hash_bits=hash_bits,
-                            flip_count=flip_count,
-                            key_id=key_id,
-                            mode=mode,
-                            row_group_size=args.row_group_size,
-                            col_group_size=args.col_group_size,
-                            tail_policy=args.tail_policy,
-                            viz_dir=args.viz_dir,
-                            viz_prefix=args.viz_prefix,
-                        )
-
-                    rows.append(
-                        {
-                            "flip_mode": mode,
-                            "hash_bits": hash_bits,
-                            "flip_count": flip_count,
-                            "key_id": key_id,
-                            "fully_corrected": int(trial["fully_corrected"]),
-                            "mismatched_before": trial["mismatched_before"],
-                            "mismatched_after": trial["mismatched_after"],
-                            "correction_steps": trial["correction_steps"],
-                            "total_combos_evaluated": trial["total_combos_evaluated"],
-                            "total_nodes_visited": trial["total_nodes_visited"],
-                            "max_flip_level_reached": trial["max_flip_level_reached"],
-                            "nodes_with_no_correction": trial["nodes_with_no_correction"],
-                            "solve_time_ms": trial["solve_time_ms"],
-                        }
-                    )
+    # Aggregate results in original order.
+    rows: list[dict[str, Any]] = []
+    idx = 0
+    for mode in modes:
+        for hash_bits in hash_sizes:
+            for flip_count in range(1, max_flip_count + 1):
+                for key_id in range(args.keys):
+                    trial = flat_results[idx]
+                    idx += 1
+                    rows.append({
+                        "flip_mode": mode,
+                        "hash_bits": hash_bits,
+                        "flip_count": flip_count,
+                        "key_id": key_id,
+                        "fully_corrected": int(trial["fully_corrected"]),
+                        "mismatched_before": trial["mismatched_before"],
+                        "mismatched_after": trial["mismatched_after"],
+                        "correction_steps": trial["correction_steps"],
+                        "total_combos_evaluated": trial["total_combos_evaluated"],
+                        "total_nodes_visited": trial["total_nodes_visited"],
+                        "max_flip_level_reached": trial["max_flip_level_reached"],
+                        "nodes_with_no_correction": trial["nodes_with_no_correction"],
+                        "solve_time_ms": trial["solve_time_ms"],
+                    })
 
                 successes = sum(
                     1 for r in rows

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from bitflip_solver import correct_with_dag
@@ -47,6 +48,12 @@ def parse_args() -> argparse.Namespace:
                    choices=["include_partial", "pad_with_zeros", "drop_partial"])
     p.add_argument("--out-dir", type=str, default="results/fig_f")
     p.add_argument("--no-plot", action="store_true")
+    p.add_argument("--max-combos", type=int, default=None,
+                   help="Per-trial combo budget cap (None = unlimited)")
+    p.add_argument("--parallel", action="store_true",
+                   help="Run trials in parallel using multiple processes")
+    p.add_argument("--workers", type=int, default=0,
+                   help="Number of parallel workers (0 = one per task, up to cpu_count)")
     p.add_argument("--group-sizes", type=str, default="1,2",
                    help="Comma-separated group sizes to test, e.g. '1' or '1,2'")
     return p.parse_args()
@@ -63,6 +70,7 @@ def run_ber_point(
     tail_policy: str,
     seed: int,
     key_id: int,
+    max_combos: int | None = None,
 ) -> bool:
     bits = [(i * 3 + 1) % 2 for i in range(bit_length)]
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
@@ -80,9 +88,15 @@ def run_ber_point(
         col_group_size=col_group_size,
         hash_bits=hash_bits,
         tail_policy=tail_policy,
+        max_combos=max_combos,
     )
     restored = grid_to_bits(result.corrected_grid, meta, key=key)
     return restored == bits
+
+
+def _ber_point_task(task: tuple) -> bool:
+    """Top-level wrapper so ProcessPoolExecutor can pickle the work unit."""
+    return run_ber_point(*task)
 
 
 def main() -> None:
@@ -111,8 +125,30 @@ def main() -> None:
         "seed": args.seed,
     })
 
+    # Build all tasks upfront.
+    all_tasks: list[tuple] = []
+    for bit_length in lengths:
+        for row_gs, col_gs, _ in group_configs:
+            for ber in ber_points:
+                flip_count = max(1, round(ber * bit_length))
+                for key_id in range(args.keys):
+                    all_tasks.append((
+                        bit_length, flip_count, stable_key(args.seed, key_id),
+                        args.rounds, row_gs, col_gs, args.hash_bits,
+                        args.tail_policy, args.seed, key_id, args.max_combos,
+                    ))
+
+    if args.parallel:
+        n_workers = args.workers if args.workers > 0 else min(len(all_tasks), os.cpu_count() or 1)
+        print(f"Running {len(all_tasks)} trials across {n_workers} workers...")
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            flat_results = list(executor.map(_ber_point_task, all_tasks))
+    else:
+        flat_results = [_ber_point_task(t) for t in all_tasks]
+
     sweep_rows: list[dict[str, Any]] = []
     threshold_rows: list[dict[str, Any]] = []
+    idx = 0
 
     for bit_length in lengths:
         for row_gs, col_gs, cfg_label in group_configs:
@@ -122,21 +158,8 @@ def main() -> None:
             for ber in ber_points:
                 flip_count = max(1, round(ber * bit_length))
                 actual_ber = flip_count / bit_length
-                successes = sum(
-                    1 for key_id in range(args.keys)
-                    if run_ber_point(
-                        bit_length=bit_length,
-                        flip_count=flip_count,
-                        key=stable_key(args.seed, key_id),
-                        rounds=args.rounds,
-                        row_group_size=row_gs,
-                        col_group_size=col_gs,
-                        hash_bits=args.hash_bits,
-                        tail_policy=args.tail_policy,
-                        seed=args.seed,
-                        key_id=key_id,
-                    )
-                )
+                successes = sum(flat_results[idx: idx + args.keys])
+                idx += args.keys
                 success_rate = successes / args.keys
                 if success_rate >= args.threshold:
                     best_threshold_ber = actual_ber
