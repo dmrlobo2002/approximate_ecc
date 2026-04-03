@@ -109,6 +109,7 @@ def correct_with_dag(
     tail_policy: TailPolicy = "include_partial",
     record_step_snapshots: bool = False,
     max_combos: int | None = None,
+    globally_pinned: frozenset = frozenset(),
 ) -> SolveResult:
     baseline_nodes = build_hash_nodes(
         grid=baseline_grid,
@@ -169,7 +170,7 @@ def correct_with_dag(
                 good_neighbor_bits |= neighbor_bits
             else:
                 mismatched_neighbor_bits |= neighbor_bits
-        free_indices = sorted(node.source_indices - good_neighbor_bits)
+        free_indices = sorted(node.source_indices - good_neighbor_bits - globally_pinned)
         intersection_indices = sorted(node.source_indices & mismatched_neighbor_bits & set(free_indices))
 
         best_combo: tuple[int, ...] | None = None

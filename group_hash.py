@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import binascii
+import math
 from dataclasses import dataclass
 from typing import Literal
 
@@ -234,4 +235,45 @@ def build_hash_nodes(
         )
 
     return nodes
+
+
+@dataclass(frozen=True)
+class BlockHashResult:
+    block_index: int
+    digest: int
+    source_indices: frozenset
+
+
+def compute_block_hashes(
+    grid: list[list[int]],
+    meta: GridMeta,
+    block_count: int,
+    hash_bits: int = 32,
+) -> list[BlockHashResult]:
+    """Divide the NxN grid into block_count row-bands and CRC-hash each band.
+
+    Any band whose digest matches the baseline is provably clean
+    (P(false match) ≈ 1/2^hash_bits).  Clean bands can be used to pin their
+    source indices as definitely-correct in the solver.
+    """
+    n = meta.n
+    rows_per_block = math.ceil(n / block_count)
+    results = []
+    for b in range(block_count):
+        r0 = b * rows_per_block
+        r1 = min(r0 + rows_per_block, n)
+        bits: list[int] = []
+        src_indices: set[int] = set()
+        for r in range(r0, r1):
+            for c in range(n):
+                bits.append(grid[r][c])
+                src_idx = meta.grid_to_source[r * n + c]
+                if src_idx < meta.original_length:
+                    src_indices.add(src_idx)
+        results.append(BlockHashResult(
+            block_index=b,
+            digest=_crc_hash(bits, hash_bits),
+            source_indices=frozenset(src_indices),
+        ))
+    return results
 

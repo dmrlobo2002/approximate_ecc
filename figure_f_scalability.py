@@ -13,6 +13,7 @@ from typing import Any
 
 from bitflip_solver import correct_with_dag
 from grid_shuffle import bits_to_grid, grid_to_bits, source_index_to_grid_coord
+from group_hash import compute_block_hashes
 
 from experiments.common import (
     agg,
@@ -50,6 +51,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-plot", action="store_true")
     p.add_argument("--max-combos", type=int, default=None,
                    help="Per-trial combo budget cap (None = unlimited)")
+    p.add_argument("--block-count", type=int, default=0,
+                   help="Sector hashes for tiered localization (0=disabled, 32-bit per sector)")
     p.add_argument("--parallel", action="store_true",
                    help="Run trials in parallel using multiple processes")
     p.add_argument("--workers", type=int, default=0,
@@ -71,6 +74,7 @@ def run_ber_point(
     seed: int,
     key_id: int,
     max_combos: int | None = None,
+    block_count: int = 0,
 ) -> bool:
     bits = [(i * 3 + 1) % 2 for i in range(bit_length)]
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
@@ -80,6 +84,14 @@ def run_ber_point(
     for src_idx in flip_indices:
         r, c = source_index_to_grid_coord(src_idx, meta)
         current_grid[r][c] ^= 1
+    globally_pinned: frozenset = frozenset()
+    if block_count > 0:
+        baseline_blocks = compute_block_hashes(baseline_grid, meta, block_count)
+        current_blocks  = compute_block_hashes(current_grid,  meta, block_count)
+        for bbase, bcurr in zip(baseline_blocks, current_blocks):
+            if bbase.digest == bcurr.digest:
+                globally_pinned |= bbase.source_indices
+
     result = correct_with_dag(
         baseline_grid=baseline_grid,
         current_grid=current_grid,
@@ -89,6 +101,7 @@ def run_ber_point(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
         max_combos=max_combos,
+        globally_pinned=globally_pinned,
     )
     restored = grid_to_bits(result.corrected_grid, meta, key=key)
     return restored == bits
@@ -96,7 +109,7 @@ def run_ber_point(
 
 def _ber_point_task(task: tuple) -> bool:
     """Top-level wrapper so ProcessPoolExecutor can pickle the work unit."""
-    return run_ber_point(*task)
+    return run_ber_point(*task)  # task order must match run_ber_point signature
 
 
 def main() -> None:
@@ -135,7 +148,7 @@ def main() -> None:
                     all_tasks.append((
                         bit_length, flip_count, stable_key(args.seed, key_id),
                         args.rounds, row_gs, col_gs, args.hash_bits,
-                        args.tail_policy, args.seed, key_id, args.max_combos,
+                        args.tail_policy, args.seed, key_id, args.max_combos, args.block_count,
                     ))
 
     if args.parallel:

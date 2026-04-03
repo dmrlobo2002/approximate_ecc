@@ -93,10 +93,13 @@ def compute_overhead_ratio(
     row_group_size: int,
     col_group_size: int,
     hash_bits: int,
+    block_count: int = 0,
+    block_hash_bits: int = 32,
 ) -> float:
     """ECC overhead ratio = total hash bits / data bits."""
     n = math.ceil(math.sqrt(bit_length))
     row_nodes = math.ceil(n / row_group_size)
     col_nodes = math.ceil(n / col_group_size)
-    return (row_nodes + col_nodes) * hash_bits / bit_length
+    block_overhead = block_count * block_hash_bits if block_count > 0 else 0
+    return ((row_nodes + col_nodes) * hash_bits + block_overhead) / bit_length
 

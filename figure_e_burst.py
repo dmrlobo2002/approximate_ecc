@@ -17,6 +17,7 @@ from typing import Any
 
 from bitflip_solver import correct_with_dag
 from grid_shuffle import bits_to_grid, grid_to_bits, source_index_to_grid_coord
+from group_hash import compute_block_hashes
 
 from experiments.common import (
     agg,
@@ -51,6 +52,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-plot", action="store_true")
     p.add_argument("--max-combos", type=int, default=None,
                    help="Per-trial combo budget cap (None = unlimited)")
+    p.add_argument("--block-count", type=int, default=0,
+                   help="Sector hashes for tiered localization (0=disabled, 32-bit per sector)")
     p.add_argument("--parallel", action="store_true",
                    help="Run trials in parallel using multiple processes")
     p.add_argument("--workers", type=int, default=0,
@@ -78,12 +81,21 @@ def run_trial(
     hash_bits: int,
     tail_policy: str,
     max_combos: int | None = None,
+    block_count: int = 0,
 ) -> dict[str, Any]:
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
     current_grid = [row[:] for row in baseline_grid]
     for src_idx in flip_indices:
         r, c = source_index_to_grid_coord(src_idx, meta)
         current_grid[r][c] ^= 1
+
+    globally_pinned: frozenset = frozenset()
+    if block_count > 0:
+        baseline_blocks = compute_block_hashes(baseline_grid, meta, block_count)
+        current_blocks  = compute_block_hashes(current_grid,  meta, block_count)
+        for bbase, bcurr in zip(baseline_blocks, current_blocks):
+            if bbase.digest == bcurr.digest:
+                globally_pinned |= bbase.source_indices
 
     result = correct_with_dag(
         baseline_grid=baseline_grid,
@@ -94,6 +106,7 @@ def run_trial(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
         max_combos=max_combos,
+        globally_pinned=globally_pinned,
     )
     restored = grid_to_bits(result.corrected_grid, meta, key=key)
     return {
@@ -107,8 +120,8 @@ def run_trial(
 
 def _trial_task(task: tuple) -> dict:
     """Top-level wrapper so ProcessPoolExecutor can pickle the work unit."""
-    bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos = task
-    return run_trial(bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos)
+    bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos, block_count = task
+    return run_trial(bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos, block_count)
 
 
 def main() -> None:
@@ -146,7 +159,7 @@ def main() -> None:
                 all_tasks.append((
                     bits, key, rounds, flip_indices,
                     args.row_group_size, args.col_group_size,
-                    args.hash_bits, args.tail_policy, args.max_combos,
+                    args.hash_bits, args.tail_policy, args.max_combos, args.block_count,
                 ))
 
     if args.parallel:
