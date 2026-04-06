@@ -1,3 +1,0 @@
-/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/_ecc_cpp.dir
-/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/edit_cache.dir
-/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/rebuild_cache.dir

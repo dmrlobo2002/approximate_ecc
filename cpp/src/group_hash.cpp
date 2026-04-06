@@ -113,45 +113,33 @@ static uint32_t lcg_next(uint32_t s) {
 static uint32_t simhash(const std::vector<int>& bits, int hash_bits, const std::string& node_id) {
     int n = (int)bits.size();
     if (n == 0) return 0;
-    uint32_t state = node_seed(node_id), result = 0;
-    for (int i = 0; i < hash_bits; i++) {
-        state = lcg_next(state);
-        result = (result << 1) | (uint32_t)bits[state % (uint32_t)n];
+
+    // GF(2) random linear hash: each output bit is the XOR of a random subset of input bits.
+    // Every input bit contributes to every output bit with probability 0.5, so a single flip
+    // changes each output bit independently with probability 0.5. This gives:
+    //   - detection probability: 1 - 2^(-hash_bits)  (same as CRC)
+    //   - false positive probability: 2^(-hash_bits) for any nonzero error pattern  (same as CRC)
+    // Unlike hyperplane SimHash, the false positive rate does NOT increase for nearby vectors.
+    uint32_t seed = node_seed(node_id);
+    uint32_t result = 0;
+
+    for (int j = 0; j < n; j++) {
+        int b = bits[j];
+        seed = lcg_next(seed);
+        uint32_t mask = seed;
+        // Each bit of mask selects whether this input bit XORs into the corresponding output bit.
+        // Re-mix if hash_bits > 32.
+        for (int i = 0; i < hash_bits && i < 32; i++) {
+            if (i > 0 && i % 32 == 0) mask = lcg_next(mask);
+            if ((mask >> (i % 32)) & 1u)
+                result ^= (uint32_t)b << i;
+        }
     }
+    // Keep only hash_bits output bits.
+    if (hash_bits < 32)
+        result &= (1u << hash_bits) - 1u;
     return result;
 }
-
-// static uint32_t simhash(const std::vector<int>& bits, int hash_bits, const std::string& node_id) {
-//     int n = (int)bits.size();
-//     if (n == 0) return 0;
-
-//     // Generate hash_bits random projection vectors using the node seed for determinism.
-//     // Each projection vector is a random +1/-1 assignment over all n input bits,
-//     // encoded as a sequence of LCG-derived sign bits (1 bit per input position per hash dim).
-//     uint32_t seed = node_seed(node_id);
-
-//     // For each output bit i, accumulate a signed sum over all input bits.
-//     // Sign for input position j in dimension i is derived from a fresh LCG state.
-//     std::vector<int> counts(hash_bits, 0);
-
-//     for (int j = 0; j < n; j++) {
-//         int bit_val = bits[j] ? 1 : -1;  // map {0,1} -> {-1,+1}
-//         seed = lcg_next(seed);
-//         uint32_t proj = seed;
-//         // Use hash_bits consecutive bits of proj as signs for this input position.
-//         // If hash_bits > 32, re-mix for the next word.
-//         for (int i = 0; i < hash_bits; i++) {
-//             if (i > 0 && i % 32 == 0) proj = lcg_next(proj);
-//             counts[i] += ((proj >> (i % 32)) & 1u) ? bit_val : -bit_val;
-//         }
-//     }
-
-//     // Threshold: output bit i is 1 if counts[i] > 0
-//     uint32_t result = 0;
-//     for (int i = 0; i < hash_bits && i < 32; i++)
-//         result |= (uint32_t)(counts[i] > 0) << i;
-//     return result;
-// }
 
 static uint32_t compute_hash(const std::vector<int>& bits, int hash_bits,
                               const std::string& node_id, const std::string& hash_type) {

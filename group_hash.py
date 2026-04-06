@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import binascii
+import functools
 import hashlib
 import math
 import random as _random
@@ -81,15 +82,46 @@ def _node_seed(node_id: str) -> int:
     return int(hashlib.md5(node_id.encode()).hexdigest(), 16) & 0xFFFFFFFF
 
 
+@functools.lru_cache(maxsize=512)
+def _simhash_masks(n: int, hash_bits: int, node_id: str) -> tuple[int, ...]:
+    """Precompute and cache GF(2) projection masks as packed integers.
+
+    masks[h] is an integer bitmask: bit i is set iff input position i is included in
+    the XOR for output bit h. Cached so the RNG is only run once per unique
+    (node_id, n, hash_bits) combination; subsequent calls only do bitwise ops.
+    """
+    rng = _random.Random(_node_seed(node_id))
+    masks = []
+    for _ in range(hash_bits):
+        mask = 0
+        for i in range(n):
+            if rng.randint(0, 1):
+                mask |= 1 << i
+        masks.append(mask)
+    return tuple(masks)
+
+
 def _simhash(bits: list[int], hash_bits: int, node_id: str) -> int:
     n = len(bits)
     if n == 0:
         return 0
-    rng = _random.Random(_node_seed(node_id))
-    positions = [rng.randint(0, n - 1) for _ in range(hash_bits)]
+    # GF(2) random linear hash: each output bit is the XOR of a random subset of input bits.
+    # Every input bit contributes to every output bit with probability 0.5, so a single flip
+    # changes each output bit independently with probability 0.5. This gives:
+    #   - detection probability: 1 - 2^(-hash_bits)  (same as CRC)
+    #   - false positive probability: 2^(-hash_bits) for any nonzero error pattern  (same as CRC)
+    # Unlike hyperplane SimHash, the false positive rate does NOT increase for nearby vectors.
+    #
+    # Hot path: pack bits into one integer, then use C-speed AND + popcount per output bit.
+    bits_int = 0
+    for i, b in enumerate(bits):
+        if b:
+            bits_int |= 1 << i
+    masks = _simhash_masks(n, hash_bits, node_id)
     result = 0
-    for pos in positions:
-        result = (result << 1) | bits[pos]
+    for h, mask in enumerate(masks):
+        parity = (bits_int & mask).bit_count() & 1
+        result |= parity << h
     return result
 
 
