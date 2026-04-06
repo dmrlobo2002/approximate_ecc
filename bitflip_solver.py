@@ -7,6 +7,12 @@ from grid_shuffle import GridMeta, source_index_to_grid_coord
 from hash_dag import HashGraph, build_hash_graph
 from experiments.common import Timer
 
+try:
+    from _ecc_cpp import correct_with_dag as _cpp_correct_with_dag
+    _HAS_CPP = True
+except ImportError:
+    _HAS_CPP = False
+
 
 @dataclass
 class SolveResult:
@@ -99,6 +105,27 @@ def _commit_combo(
     return live_matched
 
 
+def _count_node_flips(
+    node: HashNode,
+    baseline_grid: list[list[int]],
+    current_grid: list[list[int]],
+    ctx: "GroupHashContext",
+) -> int:
+    n = ctx.meta.n
+    if node.axis == "row":
+        r0, r1 = ctx.row_groups[node.group_index]
+        return sum(
+            baseline_grid[r][c] != current_grid[r][c]
+            for r in range(r0, r1) for c in range(n)
+        )
+    else:
+        c0, c1 = ctx.col_groups[node.group_index]
+        return sum(
+            baseline_grid[r][c] != current_grid[r][c]
+            for r in range(n) for c in range(c0, c1)
+        )
+
+
 def correct_with_dag(
     baseline_grid: list[list[int]],
     current_grid: list[list[int]],
@@ -111,6 +138,25 @@ def correct_with_dag(
     max_combos: int | None = None,
     globally_pinned: frozenset = frozenset(),
 ) -> SolveResult:
+    if _HAS_CPP:
+        raw = _cpp_correct_with_dag(
+            baseline_grid, current_grid, meta,
+            row_group_size, col_group_size, hash_bits,
+            tail_policy, record_step_snapshots,
+            max_combos, globally_pinned if globally_pinned else None,
+        )
+        return SolveResult(
+            corrected_grid=raw["corrected_grid"],
+            mismatched_before=raw["mismatched_before"],
+            mismatched_after=raw["mismatched_after"],
+            steps=raw["steps"],
+            step_snapshots=list(raw["step_snapshots"]),
+            total_combos_evaluated=raw["total_combos_evaluated"],
+            total_nodes_visited=raw["total_nodes_visited"],
+            max_flip_level_reached=raw["max_flip_level_reached"],
+            nodes_with_no_correction=raw["nodes_with_no_correction"],
+            solve_time_seconds=raw["solve_time_seconds"],
+        )
     baseline_nodes = build_hash_nodes(
         grid=baseline_grid,
         meta=meta,
@@ -138,9 +184,12 @@ def correct_with_dag(
 
     working_grid = _copy_grid(current_grid)
     baseline_map = _node_map(baseline_nodes)
-    ordered_nodes = sorted(dag.nodes.values(), key=lambda n: (n.covered_bits, n.node_id))
-
     ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy)
+    flip_counts = {
+        node.node_id: _count_node_flips(node, baseline_grid, current_grid, ctx)
+        for node in dag.nodes.values()
+    }
+    ordered_nodes = sorted(dag.nodes.values(), key=lambda n: (flip_counts[n.node_id], n.covered_bits, n.node_id))
     live_nodes: dict[str, HashNode] = _node_map(current_nodes)
     live_matched = sum(1 for nid, n in live_nodes.items() if baseline_map[nid].digest == n.digest)
 
