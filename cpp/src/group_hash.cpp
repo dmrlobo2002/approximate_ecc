@@ -98,6 +98,67 @@ static std::vector<std::pair<int,int>> iter_groups(
     return groups;
 }
 
+// ---- SimHash helpers ---------------------------------------------------
+
+static uint32_t node_seed(const std::string& node_id) {
+    uint32_t h = 2166136261u;
+    for (unsigned char c : node_id) { h ^= c; h *= 16777619u; }
+    return h;
+}
+
+static uint32_t lcg_next(uint32_t s) {
+    return 1664525u * s + 1013904223u;
+}
+
+static uint32_t simhash(const std::vector<int>& bits, int hash_bits, const std::string& node_id) {
+    int n = (int)bits.size();
+    if (n == 0) return 0;
+    uint32_t state = node_seed(node_id), result = 0;
+    for (int i = 0; i < hash_bits; i++) {
+        state = lcg_next(state);
+        result = (result << 1) | (uint32_t)bits[state % (uint32_t)n];
+    }
+    return result;
+}
+
+// static uint32_t simhash(const std::vector<int>& bits, int hash_bits, const std::string& node_id) {
+//     int n = (int)bits.size();
+//     if (n == 0) return 0;
+
+//     // Generate hash_bits random projection vectors using the node seed for determinism.
+//     // Each projection vector is a random +1/-1 assignment over all n input bits,
+//     // encoded as a sequence of LCG-derived sign bits (1 bit per input position per hash dim).
+//     uint32_t seed = node_seed(node_id);
+
+//     // For each output bit i, accumulate a signed sum over all input bits.
+//     // Sign for input position j in dimension i is derived from a fresh LCG state.
+//     std::vector<int> counts(hash_bits, 0);
+
+//     for (int j = 0; j < n; j++) {
+//         int bit_val = bits[j] ? 1 : -1;  // map {0,1} -> {-1,+1}
+//         seed = lcg_next(seed);
+//         uint32_t proj = seed;
+//         // Use hash_bits consecutive bits of proj as signs for this input position.
+//         // If hash_bits > 32, re-mix for the next word.
+//         for (int i = 0; i < hash_bits; i++) {
+//             if (i > 0 && i % 32 == 0) proj = lcg_next(proj);
+//             counts[i] += ((proj >> (i % 32)) & 1u) ? bit_val : -bit_val;
+//         }
+//     }
+
+//     // Threshold: output bit i is 1 if counts[i] > 0
+//     uint32_t result = 0;
+//     for (int i = 0; i < hash_bits && i < 32; i++)
+//         result |= (uint32_t)(counts[i] > 0) << i;
+//     return result;
+// }
+
+static uint32_t compute_hash(const std::vector<int>& bits, int hash_bits,
+                              const std::string& node_id, const std::string& hash_type) {
+    if (hash_type == "simhash") return simhash(bits, hash_bits, node_id);
+    return crc_hash(bits, hash_bits);
+}
+
 // ---- Public API --------------------------------------------------------
 
 std::vector<HashNode> build_hash_nodes(
@@ -106,7 +167,8 @@ std::vector<HashNode> build_hash_nodes(
     int row_group_size,
     int col_group_size,
     int hash_bits,
-    const std::string& tail_policy
+    const std::string& tail_policy,
+    const std::string& hash_type
 ) {
     int n = meta.n;
     std::vector<HashNode> nodes;
@@ -133,9 +195,10 @@ std::vector<HashNode> build_hash_nodes(
         std::sort(src_idx_vec.begin(), src_idx_vec.end());
         src_idx_vec.erase(std::unique(src_idx_vec.begin(), src_idx_vec.end()), src_idx_vec.end());
 
+        std::string nid = "row_" + std::to_string(gi);
         nodes.push_back(HashNode{
-            "row_" + std::to_string(gi), "row", gi, hash_bits,
-            crc_hash(bits, hash_bits), std::move(src_idx_vec)
+            nid, "row", gi, hash_bits,
+            compute_hash(bits, hash_bits, nid, hash_type), std::move(src_idx_vec)
         });
     }
 
@@ -161,9 +224,10 @@ std::vector<HashNode> build_hash_nodes(
         std::sort(src_idx_vec.begin(), src_idx_vec.end());
         src_idx_vec.erase(std::unique(src_idx_vec.begin(), src_idx_vec.end()), src_idx_vec.end());
 
+        std::string nid = "col_" + std::to_string(gi);
         nodes.push_back(HashNode{
-            "col_" + std::to_string(gi), "col", gi, hash_bits,
-            crc_hash(bits, hash_bits), std::move(src_idx_vec)
+            nid, "col", gi, hash_bits,
+            compute_hash(bits, hash_bits, nid, hash_type), std::move(src_idx_vec)
         });
     }
 
@@ -199,7 +263,7 @@ HashNode recompute_node(
     }
 
     HashNode result = old_node;
-    result.digest = crc_hash(bits, ctx.hash_bits);
+    result.digest = compute_hash(bits, ctx.hash_bits, old_node.node_id, ctx.hash_type);
     return result;
 }
 
@@ -208,7 +272,8 @@ GroupHashContext build_group_context(
     int row_group_size,
     int col_group_size,
     int hash_bits,
-    const std::string& tail_policy
+    const std::string& tail_policy,
+    const std::string& hash_type
 ) {
     auto row_groups = iter_groups(meta.n, row_group_size, tail_policy);
     auto col_groups = iter_groups(meta.n, col_group_size, tail_policy);
@@ -230,7 +295,7 @@ GroupHashContext build_group_context(
     }
 
     return GroupHashContext{meta, row_group_size, col_group_size, hash_bits, tail_policy,
-                            row_groups, col_groups, std::move(src_to_node_ids)};
+                            row_groups, col_groups, std::move(src_to_node_ids), hash_type};
 }
 
 std::vector<BlockHashResult> compute_block_hashes(

@@ -2,6 +2,10 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from itertools import combinations
+
+
+def hamming_distance(a: int, b: int) -> int:
+    return bin(a ^ b).count('1')
 from group_hash import GroupHashContext, HashNode, TailPolicy, build_group_context, build_hash_nodes, recompute_node
 from grid_shuffle import GridMeta, source_index_to_grid_coord
 from hash_dag import HashGraph, build_hash_graph
@@ -27,6 +31,8 @@ class SolveResult:
     max_flip_level_reached: int = 0
     nodes_with_no_correction: int = 0
     solve_time_seconds: float = 0.0
+    grid_hd_before: int = 0
+    grid_hd_after: int = 0
 
 
 def _node_map(nodes: list[HashNode]) -> dict[str, HashNode]:
@@ -137,6 +143,7 @@ def correct_with_dag(
     record_step_snapshots: bool = False,
     max_combos: int | None = None,
     globally_pinned: frozenset = frozenset(),
+    hash_type: str = "crc",
 ) -> SolveResult:
     if _HAS_CPP:
         raw = _cpp_correct_with_dag(
@@ -144,6 +151,7 @@ def correct_with_dag(
             row_group_size, col_group_size, hash_bits,
             tail_policy, record_step_snapshots,
             max_combos, globally_pinned if globally_pinned else None,
+            hash_type,
         )
         return SolveResult(
             corrected_grid=raw["corrected_grid"],
@@ -156,6 +164,8 @@ def correct_with_dag(
             max_flip_level_reached=raw["max_flip_level_reached"],
             nodes_with_no_correction=raw["nodes_with_no_correction"],
             solve_time_seconds=raw["solve_time_seconds"],
+            grid_hd_before=raw["grid_hd_before"],
+            grid_hd_after=raw["grid_hd_after"],
         )
     baseline_nodes = build_hash_nodes(
         grid=baseline_grid,
@@ -164,6 +174,7 @@ def correct_with_dag(
         col_group_size=col_group_size,
         hash_bits=hash_bits,
         tail_policy=tail_policy,
+        hash_type=hash_type,
     )
     current_nodes = build_hash_nodes(
         grid=current_grid,
@@ -172,6 +183,7 @@ def correct_with_dag(
         col_group_size=col_group_size,
         hash_bits=hash_bits,
         tail_policy=tail_policy,
+        hash_type=hash_type,
     )
     dag: HashGraph = build_hash_graph(baseline_nodes)
     mismatched_before = _mismatched_ids(current_nodes, baseline_nodes)
@@ -184,12 +196,20 @@ def correct_with_dag(
 
     working_grid = _copy_grid(current_grid)
     baseline_map = _node_map(baseline_nodes)
-    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy)
-    flip_counts = {
-        node.node_id: _count_node_flips(node, baseline_grid, current_grid, ctx)
-        for node in dag.nodes.values()
-    }
-    ordered_nodes = sorted(dag.nodes.values(), key=lambda n: (flip_counts[n.node_id], n.covered_bits, n.node_id))
+    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type)
+    if hash_type == "simhash":
+        b_map = _node_map(baseline_nodes)
+        c_map = _node_map(current_nodes)
+        scores = {
+            nid: hamming_distance(b_map[nid].digest, c_map[nid].digest)
+            for nid in b_map
+        }
+    else:
+        scores = {
+            node.node_id: _count_node_flips(node, baseline_grid, current_grid, ctx)
+            for node in dag.nodes.values()
+        }
+    ordered_nodes = sorted(dag.nodes.values(), key=lambda n: (scores[n.node_id], n.covered_bits, n.node_id))
     live_nodes: dict[str, HashNode] = _node_map(current_nodes)
     live_matched = sum(1 for nid, n in live_nodes.items() if baseline_map[nid].digest == n.digest)
 
@@ -279,6 +299,16 @@ def correct_with_dag(
     mismatched_after = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
     _timer.__exit__(None, None, None)
 
+    rows, cols = len(baseline_grid), len(baseline_grid[0]) if baseline_grid else 0
+    grid_hd_before = sum(
+        baseline_grid[r][c] != current_grid[r][c]
+        for r in range(rows) for c in range(cols)
+    )
+    grid_hd_after = sum(
+        baseline_grid[r][c] != working_grid[r][c]
+        for r in range(rows) for c in range(cols)
+    )
+
     return SolveResult(
         corrected_grid=working_grid,
         mismatched_before=mismatched_before,
@@ -290,4 +320,6 @@ def correct_with_dag(
         max_flip_level_reached=max_flip_level_reached,
         nodes_with_no_correction=nodes_with_no_correction,
         solve_time_seconds=_timer.elapsed,
+        grid_hd_before=grid_hd_before,
+        grid_hd_after=grid_hd_after,
     )

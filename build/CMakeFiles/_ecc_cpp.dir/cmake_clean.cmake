@@ -1,7 +1,6 @@
 file(REMOVE_RECURSE
   "/home/daniel/Desktop/approximate_ecc/_ecc_cpp.cpython-312-x86_64-linux-gnu.so"
   "/home/daniel/Desktop/approximate_ecc/_ecc_cpp.pdb"
-  "CMakeFiles/_ecc_cpp.dir/link.d"
   "CMakeFiles/_ecc_cpp.dir/cpp/src/bindings.cpp.o"
   "CMakeFiles/_ecc_cpp.dir/cpp/src/bindings.cpp.o.d"
   "CMakeFiles/_ecc_cpp.dir/cpp/src/bitflip_solver.cpp.o"

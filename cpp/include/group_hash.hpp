@@ -24,6 +24,7 @@ struct GroupHashContext {
     std::vector<std::pair<int, int>> row_groups;
     std::vector<std::pair<int, int>> col_groups;
     std::unordered_map<int, std::vector<std::string>> src_to_node_ids;
+    std::string hash_type = "crc";
 };
 
 struct BlockHashResult {
@@ -38,7 +39,8 @@ std::vector<HashNode> build_hash_nodes(
     int row_group_size,
     int col_group_size,
     int hash_bits,
-    const std::string& tail_policy = "include_partial"
+    const std::string& tail_policy = "include_partial",
+    const std::string& hash_type = "crc"
 );
 
 HashNode recompute_node(
@@ -52,7 +54,8 @@ GroupHashContext build_group_context(
     int row_group_size,
     int col_group_size,
     int hash_bits,
-    const std::string& tail_policy = "include_partial"
+    const std::string& tail_policy = "include_partial",
+    const std::string& hash_type = "crc"
 );
 
 std::vector<BlockHashResult> compute_block_hashes(

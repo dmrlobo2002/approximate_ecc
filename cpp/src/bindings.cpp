@@ -36,7 +36,8 @@ PYBIND11_MODULE(_ecc_cpp, mod) {
            const std::string& tail_policy,
            bool record_step_snapshots,
            py::object max_combos_obj,
-           py::object globally_pinned_obj) -> py::dict
+           py::object globally_pinned_obj,
+           const std::string& hash_type) -> py::dict
         {
             GridMeta meta = extract_meta(meta_obj);
 
@@ -57,7 +58,7 @@ PYBIND11_MODULE(_ecc_cpp, mod) {
                 cpp_baseline, cpp_current, meta,
                 row_group_size, col_group_size, hash_bits,
                 tail_policy, record_step_snapshots,
-                max_combos, globally_pinned);
+                max_combos, globally_pinned, hash_type);
 
             py::dict out;
             out["corrected_grid"]           = res.corrected_grid;
@@ -70,6 +71,8 @@ PYBIND11_MODULE(_ecc_cpp, mod) {
             out["max_flip_level_reached"]   = res.max_flip_level_reached;
             out["nodes_with_no_correction"] = res.nodes_with_no_correction;
             out["solve_time_seconds"]       = res.solve_time_seconds;
+            out["grid_hd_before"]           = res.grid_hd_before;
+            out["grid_hd_after"]            = res.grid_hd_after;
             return out;
         },
         py::arg("baseline_grid"),
@@ -82,6 +85,7 @@ PYBIND11_MODULE(_ecc_cpp, mod) {
         py::arg("record_step_snapshots") = false,
         py::arg("max_combos")            = py::none(),
         py::arg("globally_pinned")       = py::none(),
+        py::arg("hash_type")             = "crc",
         "C++ accelerated correct_with_dag. Returns a dict matching Python SolveResult fields."
     );
 

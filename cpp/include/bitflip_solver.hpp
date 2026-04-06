@@ -16,6 +16,8 @@ struct SolveResult {
     int max_flip_level_reached = 0;
     int nodes_with_no_correction = 0;
     double solve_time_seconds = 0.0;
+    int grid_hd_before = 0;
+    int grid_hd_after  = 0;
 };
 
 SolveResult correct_with_dag(
@@ -28,5 +30,6 @@ SolveResult correct_with_dag(
     const std::string& tail_policy = "include_partial",
     bool record_step_snapshots = false,
     int max_combos = -1,    // -1 = no limit
-    const std::unordered_set<int>& globally_pinned = {}
+    const std::unordered_set<int>& globally_pinned = {},
+    const std::string& hash_type = "crc"
 );

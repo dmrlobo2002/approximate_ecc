@@ -1,9 +1,11 @@
-"""Grouped row/column hashing with CRC variants."""
+"""Grouped row/column hashing with CRC variants and SimHash LSH."""
 
 from __future__ import annotations
 
 import binascii
+import hashlib
 import math
+import random as _random
 from dataclasses import dataclass
 from typing import Literal
 
@@ -75,6 +77,28 @@ def _pack_bits_to_bytes(bits: list[int]) -> bytes:
     return bytes(out)
 
 
+def _node_seed(node_id: str) -> int:
+    return int(hashlib.md5(node_id.encode()).hexdigest(), 16) & 0xFFFFFFFF
+
+
+def _simhash(bits: list[int], hash_bits: int, node_id: str) -> int:
+    n = len(bits)
+    if n == 0:
+        return 0
+    rng = _random.Random(_node_seed(node_id))
+    positions = [rng.randint(0, n - 1) for _ in range(hash_bits)]
+    result = 0
+    for pos in positions:
+        result = (result << 1) | bits[pos]
+    return result
+
+
+def _compute_hash(bits: list[int], hash_bits: int, node_id: str, hash_type: str) -> int:
+    if hash_type == "simhash":
+        return _simhash(bits, hash_bits, node_id)
+    return _crc_hash(bits, hash_bits)
+
+
 def _crc_hash(bits: list[int], hash_bits: int) -> int:
     data = _pack_bits_to_bytes(bits)
     if hash_bits == 8:
@@ -111,6 +135,7 @@ class GroupHashContext:
     row_groups: tuple[tuple[int, int], ...]
     col_groups: tuple[tuple[int, int], ...]
     src_to_node_ids: dict[int, tuple[str, ...]]
+    hash_type: str = "crc"
 
 
 def build_group_context(
@@ -119,6 +144,7 @@ def build_group_context(
     col_group_size: int,
     hash_bits: int,
     tail_policy: TailPolicy = "include_partial",
+    hash_type: str = "crc",
 ) -> GroupHashContext:
     row_groups = tuple(_iter_groups(meta.n, row_group_size, tail_policy))
     col_groups = tuple(_iter_groups(meta.n, col_group_size, tail_policy))
@@ -143,6 +169,7 @@ def build_group_context(
         row_groups=row_groups,
         col_groups=col_groups,
         src_to_node_ids=src_to_node_ids,
+        hash_type=hash_type,
     )
 
 
@@ -163,7 +190,7 @@ def recompute_node(old_node: "HashNode", grid: list[list[int]], ctx: GroupHashCo
         axis=old_node.axis,
         group_index=old_node.group_index,
         hash_bits=old_node.hash_bits,
-        digest=_crc_hash(bits, ctx.hash_bits),
+        digest=_compute_hash(bits, ctx.hash_bits, old_node.node_id, ctx.hash_type),
         source_indices=old_node.source_indices,
     )
 
@@ -175,6 +202,7 @@ def build_hash_nodes(
     col_group_size: int,
     hash_bits: int,
     tail_policy: TailPolicy = "include_partial",
+    hash_type: str = "crc",
 ) -> list[HashNode]:
     n = meta.n
     if len(grid) != n or any(len(row) != n for row in grid):
@@ -196,7 +224,7 @@ def build_hash_nodes(
         if tail_policy == "pad_with_zeros" and (r1 - r0) < row_group_size:
             bits.extend([0] * (row_group_size - (r1 - r0)) * n)
 
-        digest = _crc_hash(bits, hash_bits)
+        digest = _compute_hash(bits, hash_bits, f"row_{group_idx}", hash_type)
         nodes.append(
             HashNode(
                 node_id=f"row_{group_idx}",
@@ -222,7 +250,7 @@ def build_hash_nodes(
         if tail_policy == "pad_with_zeros" and (c1 - c0) < col_group_size:
             bits.extend([0] * (col_group_size - (c1 - c0)) * n)
 
-        digest = _crc_hash(bits, hash_bits)
+        digest = _compute_hash(bits, hash_bits, f"col_{group_idx}", hash_type)
         nodes.append(
             HashNode(
                 node_id=f"col_{group_idx}",

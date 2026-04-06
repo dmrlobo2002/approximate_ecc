@@ -13,12 +13,13 @@ from hash_dag import build_hash_graph
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Feistel-grid CRC DAG bitflip correction demo")
-    parser.add_argument("--bit-length", type=int, default=37, help="Number of source bits L")
+    parser.add_argument("--bit-length", type=int, default=4096, help="Number of source bits L")
     parser.add_argument("--key", type=str, default="demo-key-123", help="Feistel key string")
     parser.add_argument("--rounds", type=int, default=8, help="Feistel rounds")
     parser.add_argument("--row-group-size", type=int, default=1, help="Non-overlapping row group size")
     parser.add_argument("--col-group-size", type=int, default=1, help="Non-overlapping column group size")
-    parser.add_argument("--hash-bits", type=int, choices=[8, 16, 32], default=16, help="CRC bit-width")
+    parser.add_argument("--hash-bits", type=int, default=16, help="Hash bit-width (8/16/32 for CRC; any positive int for simhash)")
+    parser.add_argument("--hash-type", choices=["crc", "simhash"], default="crc", help="Hash scheme")
     parser.add_argument("--tail-policy", choices=["include_partial", "pad_with_zeros", "drop_partial"], default="include_partial")
     parser.add_argument("--flip-count", type=int, default=2, help="Number of random source-bit flips to inject")
     parser.add_argument(
@@ -38,6 +39,8 @@ def main() -> None:
     args = parse_args()
     if args.bit_length <= 0:
         raise ValueError("--bit-length must be positive")
+    if args.hash_type == "crc" and args.hash_bits not in {8, 16, 32}:
+        raise ValueError("--hash-bits must be 8, 16, or 32 for CRC")
 
     key = args.key.encode("utf-8")
     bits = [(i * 3 + 1) % 2 for i in range(args.bit_length)]
@@ -66,6 +69,7 @@ def main() -> None:
         col_group_size=args.col_group_size,
         hash_bits=args.hash_bits,
         tail_policy=args.tail_policy,
+        hash_type=args.hash_type,
     )
     current_hashes = build_hash_nodes(
         current_grid,
@@ -74,6 +78,7 @@ def main() -> None:
         col_group_size=args.col_group_size,
         hash_bits=args.hash_bits,
         tail_policy=args.tail_policy,
+        hash_type=args.hash_type,
     )
     mismatched = sum(1 for a, b in zip(baseline_hashes, current_hashes) if a.digest != b.digest)
     print(f"Initial mismatched hashes: {mismatched}")
@@ -87,11 +92,17 @@ def main() -> None:
         hash_bits=args.hash_bits,
         tail_policy=args.tail_policy,
         record_step_snapshots=args.viz,
+        hash_type=args.hash_type,
     )
     print(f"Mismatched before: {len(result.mismatched_before)}")
     print(f"Mismatched after: {len(result.mismatched_after)}")
     for step in result.steps:
         print(step)
+
+    print(f"Grid HD before repair (bits damaged): {result.grid_hd_before}")
+    print(f"Grid HD after repair  (bits remaining wrong): {result.grid_hd_after}")
+    bits_recovered = result.grid_hd_before - result.grid_hd_after
+    print(f"Bits recovered: {bits_recovered}/{result.grid_hd_before}")
 
     restored_bits = grid_to_bits(result.corrected_grid, meta, key=key)
     print("Recovered original bits:", restored_bits == bits)

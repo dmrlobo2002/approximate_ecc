@@ -42,6 +42,12 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated hash bit widths, e.g. '16' or '32' or '16,32'",
     )
     p.add_argument(
+        "--hash-types",
+        type=str,
+        default="crc",
+        help="Comma-separated hash schemes, e.g. 'crc' or 'simhash' or 'crc,simhash'",
+    )
+    p.add_argument(
         "--flip-mode",
         choices=FLIP_MODES,
         default="both",
@@ -125,6 +131,7 @@ def run_trial(
     record_step_snapshots: bool = False,
     max_combos: int | None = None,
     block_count: int = 0,
+    hash_type: str = "crc",
 ) -> dict[str, Any]:
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
     current_grid = [row[:] for row in baseline_grid]
@@ -152,6 +159,7 @@ def run_trial(
         record_step_snapshots=record_step_snapshots,
         max_combos=max_combos,
         globally_pinned=globally_pinned,
+        hash_type=hash_type,
     )
 
     restored_bits = grid_to_bits(result.corrected_grid, meta, key=key)
@@ -175,10 +183,10 @@ def run_trial(
 
 def _trial_task(task: tuple) -> dict[str, Any]:
     """Top-level wrapper so ProcessPoolExecutor can pickle the work unit (no viz)."""
-    bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos, block_count = task
+    bits, key, rounds, flip_indices, row_group_size, col_group_size, hash_bits, tail_policy, max_combos, block_count, hash_type = task
     return run_trial(bits, key, rounds, flip_indices, row_group_size, col_group_size,
                      hash_bits, tail_policy, record_step_snapshots=False, max_combos=max_combos,
-                     block_count=block_count)
+                     block_count=block_count, hash_type=hash_type)
 
 
 def maybe_render_viz(
@@ -234,6 +242,7 @@ def maybe_render_viz(
 def collect_rows(
     args: argparse.Namespace,
     hash_sizes: list[int],
+    hash_types: list[str],
     modes: list[str],
     bits: list[int],
     viz_key_ids: set[int],
@@ -247,24 +256,25 @@ def collect_rows(
     # Build all tasks upfront so RNG state is determined in the main process.
     all_tasks: list[tuple] = []
     all_metas: list[tuple] = []
-    for mode in modes:
-        for hash_bits in hash_sizes:
-            for flip_count in range(1, max_flip_count + 1):
-                for key_id in range(args.keys):
-                    key = stable_key(args.seed, key_id)
-                    rng = stable_rng(args.seed, key_id, flip_count, hash_bits, mode)
-                    flip_indices = get_flip_indices(flip_count, args.bit_length, mode, rng)
-                    want_viz = (
-                        args.viz
-                        and key_id in viz_key_ids
-                        and (not viz_flip_counts or flip_count in viz_flip_counts)
-                    )
-                    all_tasks.append((
-                        bits, key, args.rounds, flip_indices,
-                        args.row_group_size, args.col_group_size,
-                        hash_bits, args.tail_policy, args.max_combos, args.block_count,
-                    ))
-                    all_metas.append((mode, hash_bits, flip_count, key_id, want_viz))
+    for hash_type in hash_types:
+        for mode in modes:
+            for hash_bits in hash_sizes:
+                for flip_count in range(1, max_flip_count + 1):
+                    for key_id in range(args.keys):
+                        key = stable_key(args.seed, key_id)
+                        rng = stable_rng(args.seed, key_id, flip_count, hash_bits, mode)
+                        flip_indices = get_flip_indices(flip_count, args.bit_length, mode, rng)
+                        want_viz = (
+                            args.viz
+                            and key_id in viz_key_ids
+                            and (not viz_flip_counts or flip_count in viz_flip_counts)
+                        )
+                        all_tasks.append((
+                            bits, key, args.rounds, flip_indices,
+                            args.row_group_size, args.col_group_size,
+                            hash_bits, args.tail_policy, args.max_combos, args.block_count, hash_type,
+                        ))
+                        all_metas.append((hash_type, mode, hash_bits, flip_count, key_id, want_viz))
 
     if args.parallel:
         n_workers = args.workers if args.workers > 0 else min(len(all_tasks), os.cpu_count() or 1)
@@ -273,10 +283,10 @@ def collect_rows(
             flat_results = list(executor.map(_trial_task, all_tasks))
     else:
         flat_results = []
-        for task, (mode, hash_bits, flip_count, key_id, want_viz) in zip(all_tasks, all_metas):
-            bits_, key, rounds, flip_indices, rgs, cgs, hb, tp, mc, bc = task
+        for task, (hash_type, mode, hash_bits, flip_count, key_id, want_viz) in zip(all_tasks, all_metas):
+            bits_, key, rounds, flip_indices, rgs, cgs, hb, tp, mc, bc, ht = task
             trial = run_trial(bits_, key, rounds, flip_indices, rgs, cgs, hb, tp,
-                              record_step_snapshots=want_viz, max_combos=mc, block_count=bc)
+                              record_step_snapshots=want_viz, max_combos=mc, block_count=bc, hash_type=ht)
             if want_viz:
                 maybe_render_viz(
                     trial=trial, hash_bits=hash_bits, flip_count=flip_count,
@@ -289,39 +299,42 @@ def collect_rows(
     # Aggregate results in original order.
     rows: list[dict[str, Any]] = []
     idx = 0
-    for mode in modes:
-        for hash_bits in hash_sizes:
-            for flip_count in range(1, max_flip_count + 1):
-                for key_id in range(args.keys):
-                    trial = flat_results[idx]
-                    idx += 1
-                    rows.append({
-                        "flip_mode": mode,
-                        "hash_bits": hash_bits,
-                        "flip_count": flip_count,
-                        "key_id": key_id,
-                        "fully_corrected": int(trial["fully_corrected"]),
-                        "mismatched_before": trial["mismatched_before"],
-                        "mismatched_after": trial["mismatched_after"],
-                        "correction_steps": trial["correction_steps"],
-                        "total_combos_evaluated": trial["total_combos_evaluated"],
-                        "total_nodes_visited": trial["total_nodes_visited"],
-                        "max_flip_level_reached": trial["max_flip_level_reached"],
-                        "nodes_with_no_correction": trial["nodes_with_no_correction"],
-                        "solve_time_ms": trial["solve_time_ms"],
-                    })
+    for hash_type in hash_types:
+        for mode in modes:
+            for hash_bits in hash_sizes:
+                for flip_count in range(1, max_flip_count + 1):
+                    for key_id in range(args.keys):
+                        trial = flat_results[idx]
+                        idx += 1
+                        rows.append({
+                            "hash_type": hash_type,
+                            "flip_mode": mode,
+                            "hash_bits": hash_bits,
+                            "flip_count": flip_count,
+                            "key_id": key_id,
+                            "fully_corrected": int(trial["fully_corrected"]),
+                            "mismatched_before": trial["mismatched_before"],
+                            "mismatched_after": trial["mismatched_after"],
+                            "correction_steps": trial["correction_steps"],
+                            "total_combos_evaluated": trial["total_combos_evaluated"],
+                            "total_nodes_visited": trial["total_nodes_visited"],
+                            "max_flip_level_reached": trial["max_flip_level_reached"],
+                            "nodes_with_no_correction": trial["nodes_with_no_correction"],
+                            "solve_time_ms": trial["solve_time_ms"],
+                        })
 
-                successes = sum(
-                    1 for r in rows
-                    if r["flip_mode"] == mode
-                    and r["hash_bits"] == hash_bits
-                    and r["flip_count"] == flip_count
-                    and r["fully_corrected"]
-                )
-                print(
-                    f"mode={mode:6s}  hash_bits={hash_bits:2d}  flips={flip_count:2d}  "
-                    f"success={successes}/{args.keys}"
-                )
+                    successes = sum(
+                        1 for r in rows
+                        if r["hash_type"] == hash_type
+                        and r["flip_mode"] == mode
+                        and r["hash_bits"] == hash_bits
+                        and r["flip_count"] == flip_count
+                        and r["fully_corrected"]
+                    )
+                    print(
+                        f"hash_type={hash_type:7s}  mode={mode:6s}  hash_bits={hash_bits:2d}  "
+                        f"flips={flip_count:2d}  success={successes}/{args.keys}"
+                    )
 
     return rows
 
@@ -329,6 +342,7 @@ def collect_rows(
 def plot_results(
     rows: list[dict[str, Any]],
     hash_sizes: list[int],
+    hash_types: list[str],
     modes: list[str],
     out_dir: str,
     bit_length: int,
@@ -345,17 +359,18 @@ def plot_results(
 
         # Panel 1: Success rate
         ax1 = axes[0][0]
-        for hash_bits in hash_sizes:
-            xs, ys, yerr = [], [], []
-            for fc in flip_counts:
-                subset = [r for r in mode_rows if r["hash_bits"] == hash_bits and r["flip_count"] == fc]
-                rate = sum(r["fully_corrected"] for r in subset) / len(subset) if subset else float("nan")
-                n = len(subset)
-                se = math.sqrt(rate * (1 - rate) / n) if n > 1 and 0 < rate < 1 else 0.0
-                xs.append(fc)
-                ys.append(rate)
-                yerr.append(se)
-            ax1.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit")
+        for ht in hash_types:
+            for hash_bits in hash_sizes:
+                xs, ys, yerr = [], [], []
+                for fc in flip_counts:
+                    subset = [r for r in mode_rows if r["hash_type"] == ht and r["hash_bits"] == hash_bits and r["flip_count"] == fc]
+                    rate = sum(r["fully_corrected"] for r in subset) / len(subset) if subset else float("nan")
+                    n = len(subset)
+                    se = math.sqrt(rate * (1 - rate) / n) if n > 1 and 0 < rate < 1 else 0.0
+                    xs.append(fc)
+                    ys.append(rate)
+                    yerr.append(se)
+                ax1.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit {ht}")
         ax1.set_title("Success rate vs flip count")
         ax1.set_xlabel("Injected flips")
         ax1.set_ylabel("Success rate")
@@ -370,16 +385,17 @@ def plot_results(
 
         # Panel 2: Total combinations evaluated
         ax2 = axes[0][1]
-        for hash_bits in hash_sizes:
-            xs, ys, yerr = [], [], []
-            for fc in flip_counts:
-                subset = [r for r in mode_rows if r["hash_bits"] == hash_bits and r["flip_count"] == fc]
-                vals = [float(r["total_combos_evaluated"]) for r in subset]
-                a = agg(vals)
-                xs.append(fc)
-                ys.append(a.mean)
-                yerr.append(a.sem)
-            ax2.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit")
+        for ht in hash_types:
+            for hash_bits in hash_sizes:
+                xs, ys, yerr = [], [], []
+                for fc in flip_counts:
+                    subset = [r for r in mode_rows if r["hash_type"] == ht and r["hash_bits"] == hash_bits and r["flip_count"] == fc]
+                    vals = [float(r["total_combos_evaluated"]) for r in subset]
+                    a = agg(vals)
+                    xs.append(fc)
+                    ys.append(a.mean)
+                    yerr.append(a.sem)
+                ax2.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit {ht}")
         ax2.set_title("Search effort: total combinations evaluated")
         ax2.set_xlabel("Injected flips")
         ax2.set_ylabel("Mean combinations evaluated")
@@ -389,16 +405,17 @@ def plot_results(
 
         # Panel 3: Max flip level reached
         ax3 = axes[1][0]
-        for hash_bits in hash_sizes:
-            xs, ys, yerr = [], [], []
-            for fc in flip_counts:
-                subset = [r for r in mode_rows if r["hash_bits"] == hash_bits and r["flip_count"] == fc]
-                vals = [float(r["max_flip_level_reached"]) for r in subset]
-                a = agg(vals)
-                xs.append(fc)
-                ys.append(a.mean)
-                yerr.append(a.sem)
-            ax3.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit")
+        for ht in hash_types:
+            for hash_bits in hash_sizes:
+                xs, ys, yerr = [], [], []
+                for fc in flip_counts:
+                    subset = [r for r in mode_rows if r["hash_type"] == ht and r["hash_bits"] == hash_bits and r["flip_count"] == fc]
+                    vals = [float(r["max_flip_level_reached"]) for r in subset]
+                    a = agg(vals)
+                    xs.append(fc)
+                    ys.append(a.mean)
+                    yerr.append(a.sem)
+                ax3.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit {ht}")
         ax3.set_title("Max flip level reached during search")
         ax3.set_xlabel("Injected flips")
         ax3.set_ylabel("Mean max flip level")
@@ -408,16 +425,17 @@ def plot_results(
 
         # Panel 4: Solve time
         ax4 = axes[1][1]
-        for hash_bits in hash_sizes:
-            xs, ys, yerr = [], [], []
-            for fc in flip_counts:
-                subset = [r for r in mode_rows if r["hash_bits"] == hash_bits and r["flip_count"] == fc]
-                vals = [float(r["solve_time_ms"]) for r in subset]
-                a = agg(vals)
-                xs.append(fc)
-                ys.append(a.mean)
-                yerr.append(a.sem)
-            ax4.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit")
+        for ht in hash_types:
+            for hash_bits in hash_sizes:
+                xs, ys, yerr = [], [], []
+                for fc in flip_counts:
+                    subset = [r for r in mode_rows if r["hash_type"] == ht and r["hash_bits"] == hash_bits and r["flip_count"] == fc]
+                    vals = [float(r["solve_time_ms"]) for r in subset]
+                    a = agg(vals)
+                    xs.append(fc)
+                    ys.append(a.mean)
+                    yerr.append(a.sem)
+                ax4.errorbar(xs, ys, yerr=yerr, marker="o", linewidth=2, capsize=3, label=f"{hash_bits}-bit {ht}")
         ax4.set_title("Mean solve time (ms)")
         ax4.set_xlabel("Injected flips")
         ax4.set_ylabel("Solve time (ms)")
@@ -472,9 +490,10 @@ def plot_results(
 def main() -> None:
     args = parse_args()
     hash_sizes = parse_int_list(args.hash_sizes)
+    hash_types = [t.strip() for t in args.hash_types.split(",") if t.strip()]
     for h in hash_sizes:
-        if h not in {8, 16, 32}:
-            raise ValueError(f"--hash-sizes must be from {{8, 16, 32}}, got {h}")
+        if "crc" in hash_types and h not in {8, 16, 32}:
+            raise ValueError(f"CRC requires --hash-sizes from {{8, 16, 32}}, got {h}")
     if not hash_sizes:
         raise ValueError("--hash-sizes must be non-empty")
     if args.bit_length <= 0:
@@ -515,6 +534,7 @@ def main() -> None:
     rows = collect_rows(
         args=args,
         hash_sizes=hash_sizes,
+        hash_types=hash_types,
         modes=modes,
         bits=bits,
         viz_key_ids=viz_key_ids,
@@ -527,7 +547,7 @@ def main() -> None:
         csv_path,
         rows=rows,
         fieldnames=[
-            "flip_mode", "hash_bits", "flip_count", "key_id",
+            "hash_type", "flip_mode", "hash_bits", "flip_count", "key_id",
             "fully_corrected", "mismatched_before", "mismatched_after",
             "correction_steps", "total_combos_evaluated", "total_nodes_visited",
             "max_flip_level_reached", "nodes_with_no_correction", "solve_time_ms",
@@ -538,7 +558,7 @@ def main() -> None:
         return
 
     try:
-        plot_results(rows=rows, hash_sizes=hash_sizes, modes=modes, out_dir=out_dir, bit_length=args.bit_length, max_flip_count=max_flip_count)
+        plot_results(rows=rows, hash_sizes=hash_sizes, hash_types=hash_types, modes=modes, out_dir=out_dir, bit_length=args.bit_length, max_flip_count=max_flip_count)
     except ModuleNotFoundError as e:
         raise RuntimeError(
             "matplotlib is required for plotting. Install it or rerun with --no-plot."

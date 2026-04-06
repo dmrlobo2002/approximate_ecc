@@ -6,6 +6,12 @@
 #include <numeric>
 #include <functional>
 
+// ---- Helpers -----------------------------------------------------------
+
+static int hamming_distance(uint32_t a, uint32_t b) {
+    return __builtin_popcount(a ^ b);
+}
+
 // ---- Combination enumeration -------------------------------------------
 
 // Calls callback(combo) for each size-k combination from pool.
@@ -162,15 +168,16 @@ SolveResult correct_with_dag(
     const std::string& tail_policy,
     bool /*record_step_snapshots*/,
     int max_combos,
-    const std::unordered_set<int>& globally_pinned)
+    const std::unordered_set<int>& globally_pinned,
+    const std::string& hash_type)
 {
     auto t_start = std::chrono::steady_clock::now();
 
     // Build hash nodes
     auto baseline_nodes = build_hash_nodes(
-        baseline_grid, meta, row_group_size, col_group_size, hash_bits, tail_policy);
+        baseline_grid, meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type);
     auto current_nodes = build_hash_nodes(
-        current_grid, meta, row_group_size, col_group_size, hash_bits, tail_policy);
+        current_grid, meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type);
 
     HashGraph dag = build_hash_graph(baseline_nodes);
 
@@ -197,7 +204,7 @@ SolveResult correct_with_dag(
         if (baseline_map.at(nid).digest == n.digest) live_matched++;
 
     GroupHashContext ctx = build_group_context(
-        meta, row_group_size, col_group_size, hash_bits, tail_policy);
+        meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type);
 
     // Compute per-node flip count from baseline vs current grid
     auto count_node_flips = [&](const HashNode& node) -> int {
@@ -217,17 +224,26 @@ SolveResult correct_with_dag(
         return count;
     };
 
-    // Sort nodes: fewest flipped bits first, then covered_bits, then node_id
+    // Sort nodes: fewest damage score first, then covered_bits, then node_id
     std::vector<HashNode> ordered_nodes;
     ordered_nodes.reserve(dag.nodes.size());
     for (const auto& [_, n] : dag.nodes) ordered_nodes.push_back(n);
-    std::unordered_map<std::string, int> flip_counts;
-    flip_counts.reserve(ordered_nodes.size());
-    for (const auto& node : ordered_nodes)
-        flip_counts[node.node_id] = count_node_flips(node);
+    std::unordered_map<std::string, int> scores;
+    scores.reserve(ordered_nodes.size());
+    if (hash_type == "simhash") {
+        // Deployment-safe: popcount of XOR digest estimates flip density
+        std::unordered_map<std::string, HashNode> cur_map;
+        for (const auto& n : current_nodes) cur_map[n.node_id] = n;
+        for (const auto& node : ordered_nodes)
+            scores[node.node_id] = hamming_distance(
+                baseline_map.at(node.node_id).digest, cur_map.at(node.node_id).digest);
+    } else {
+        for (const auto& node : ordered_nodes)
+            scores[node.node_id] = count_node_flips(node);
+    }
     std::sort(ordered_nodes.begin(), ordered_nodes.end(),
               [&](const HashNode& a, const HashNode& b) {
-                  int fa = flip_counts[a.node_id], fb = flip_counts[b.node_id];
+                  int fa = scores[a.node_id], fb = scores[b.node_id];
                   if (fa != fb) return fa < fb;
                   if (a.covered_bits() != b.covered_bits())
                       return a.covered_bits() < b.covered_bits();
@@ -346,6 +362,15 @@ SolveResult correct_with_dag(
     auto t_end = std::chrono::steady_clock::now();
     double elapsed = std::chrono::duration<double>(t_end - t_start).count();
 
+    int grid_hd_before = 0, grid_hd_after = 0;
+    int rows = (int)baseline_grid.size();
+    int cols = rows > 0 ? (int)baseline_grid[0].size() : 0;
+    for (int r = 0; r < rows; r++)
+        for (int c = 0; c < cols; c++) {
+            if (baseline_grid[r][c] != current_grid[r][c]) grid_hd_before++;
+            if (baseline_grid[r][c] != working_grid[r][c]) grid_hd_after++;
+        }
+
     return SolveResult{
         std::move(working_grid),
         std::move(mismatched_before),
@@ -355,6 +380,8 @@ SolveResult correct_with_dag(
         total_nodes_visited,
         max_flip_level_reached,
         nodes_with_no_correction,
-        elapsed
+        elapsed,
+        grid_hd_before,
+        grid_hd_after
     };
 }
