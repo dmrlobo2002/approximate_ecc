@@ -13,6 +13,7 @@ from experiments.common import Timer
 
 try:
     from _ecc_cpp import correct_with_dag as _cpp_correct_with_dag
+    from _ecc_cpp import correct_without_golden as _cpp_correct_without_golden
     _HAS_CPP = True
 except ImportError:
     _HAS_CPP = False
@@ -130,6 +131,154 @@ def _count_node_flips(
             baseline_grid[r][c] != current_grid[r][c]
             for r in range(n) for c in range(c0, c1)
         )
+
+
+def correct_without_golden(
+    baseline_nodes: list[HashNode],
+    current_grid: list[list[int]],
+    meta: GridMeta,
+    row_group_size: int,
+    col_group_size: int,
+    hash_bits: int,
+    tail_policy: TailPolicy = "include_partial",
+    record_step_snapshots: bool = False,
+    max_flips: int = 2,
+    hash_type: str = "crc",
+) -> SolveResult:
+    """Solver that requires only stored hash digests, not the original (golden) bits.
+
+    Iterates nodes smallest-first; for each mismatched node tries every combination
+    of 1..max_flips bit flips within that node's source indices and commits the first
+    combo that restores the node's hash digest.  Because rows and columns overlap,
+    an early fix cascades: a corrected row bit may partially fix a column node,
+    making it solvable when we reach it.
+    """
+    if _HAS_CPP:
+        raw = _cpp_correct_without_golden(
+            baseline_nodes, current_grid, meta,
+            row_group_size, col_group_size, hash_bits,
+            tail_policy, record_step_snapshots, max_flips, hash_type,
+        )
+        return SolveResult(
+            corrected_grid=raw["corrected_grid"],
+            mismatched_before=raw["mismatched_before"],
+            mismatched_after=raw["mismatched_after"],
+            steps=raw["steps"],
+            step_snapshots=list(raw["step_snapshots"]),
+            total_combos_evaluated=raw["total_combos_evaluated"],
+            total_nodes_visited=raw["total_nodes_visited"],
+            max_flip_level_reached=raw["max_flip_level_reached"],
+            nodes_with_no_correction=raw["nodes_with_no_correction"],
+            solve_time_seconds=raw["solve_time_seconds"],
+            grid_hd_before=raw["grid_hd_before"],
+            grid_hd_after=raw["grid_hd_after"],
+        )
+    current_nodes = build_hash_nodes(
+        grid=current_grid,
+        meta=meta,
+        row_group_size=row_group_size,
+        col_group_size=col_group_size,
+        hash_bits=hash_bits,
+        tail_policy=tail_policy,
+        hash_type=hash_type,
+    )
+    baseline_map = _node_map(baseline_nodes)
+    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type)
+    live_nodes = _node_map(current_nodes)
+    mismatched_before = _mismatched_ids(current_nodes, baseline_nodes)
+
+    steps: list[str] = []
+    step_snapshots: list[tuple[str, set[str]]] = []
+    if record_step_snapshots:
+        step_snapshots.append(("initial", set(mismatched_before)))
+
+    working_grid = _copy_grid(current_grid)
+    live_matched = sum(1 for nid, n in live_nodes.items() if baseline_map[nid].digest == n.digest)
+
+    ordered_nodes = sorted(live_nodes.values(), key=lambda n: (n.covered_bits, n.node_id))
+
+    total_combos_evaluated = 0
+    total_nodes_visited = 0
+    max_flip_level_reached = 0
+    nodes_with_no_correction = 0
+
+    _timer = Timer()
+    _timer.__enter__()
+
+    while True:
+        any_fixed = False
+        for node in ordered_nodes:
+            if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
+                continue
+
+            total_nodes_visited += 1
+            src_indices = sorted(node.source_indices)
+            committed = False
+
+            for flips in range(1, max_flips + 1):
+                if committed:
+                    break
+                for combo in combinations(src_indices, flips):
+                    total_combos_evaluated += 1
+                    affected_ids: set[str] = set()
+                    for src_idx in combo:
+                        for nid in ctx.src_to_node_ids[src_idx]:
+                            affected_ids.add(nid)
+                    saved = {nid: live_nodes[nid] for nid in affected_ids}
+                    for src_idx in combo:
+                        r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+                        working_grid[r][c] ^= 1
+                    for nid in affected_ids:
+                        live_nodes[nid] = recompute_node(live_nodes[nid], working_grid, ctx)
+
+                    if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
+                        live_matched += sum(
+                            int(live_nodes[nid].digest == baseline_map[nid].digest)
+                            - int(saved[nid].digest == baseline_map[nid].digest)
+                            for nid in affected_ids
+                        )
+                        if flips > max_flip_level_reached:
+                            max_flip_level_reached = flips
+                        steps.append(f"Corrected {node.node_id} using {flips} flips.")
+                        if record_step_snapshots:
+                            step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
+                            step_snapshots.append((node.node_id, step_mismatched))
+                        committed = True
+                        any_fixed = True
+                        break
+                    else:
+                        for nid, old_node in saved.items():
+                            live_nodes[nid] = old_node
+                        for src_idx in combo:
+                            r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+                            working_grid[r][c] ^= 1
+
+            if not committed:
+                nodes_with_no_correction += 1
+            elif live_matched == len(baseline_map):
+                any_fixed = True  # trigger clean exit
+                break
+
+        if not any_fixed or live_matched == len(baseline_map):
+            break
+
+    _timer.__exit__(None, None, None)
+    mismatched_after = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
+
+    return SolveResult(
+        corrected_grid=working_grid,
+        mismatched_before=mismatched_before,
+        mismatched_after=mismatched_after,
+        steps=steps,
+        step_snapshots=step_snapshots,
+        total_combos_evaluated=total_combos_evaluated,
+        total_nodes_visited=total_nodes_visited,
+        max_flip_level_reached=max_flip_level_reached,
+        nodes_with_no_correction=nodes_with_no_correction,
+        solve_time_seconds=_timer.elapsed,
+        grid_hd_before=0,
+        grid_hd_after=0,
+    )
 
 
 def correct_with_dag(

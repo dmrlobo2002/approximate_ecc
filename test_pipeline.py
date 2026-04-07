@@ -1,4 +1,4 @@
-from bitflip_solver import correct_with_dag
+from bitflip_solver import correct_with_dag, correct_without_golden
 from grid_shuffle import bits_to_grid, grid_to_bits
 from group_hash import build_hash_nodes
 from hash_dag import build_hash_graph
@@ -46,4 +46,27 @@ def test_solver_reduces_mismatches():
     mismatched_after = sum(1 for a, b in zip(baseline_nodes, corrected_nodes) if a.digest != b.digest)
 
     assert mismatched_after <= mismatched_before
+
+
+def test_no_golden_solver_reduces_mismatches():
+    key = b"k4"
+    bits = [i % 2 for i in range(36)]
+    baseline_grid, meta = bits_to_grid(bits, key=key, rounds=8)
+    damaged = [row[:] for row in baseline_grid]
+    damaged[1][1] ^= 1  # single flip
+
+    baseline_nodes = build_hash_nodes(baseline_grid, meta, row_group_size=2, col_group_size=2, hash_bits=16)
+    damaged_nodes = build_hash_nodes(damaged, meta, row_group_size=2, col_group_size=2, hash_bits=16)
+    mismatched_before = sum(1 for a, b in zip(baseline_nodes, damaged_nodes) if a.digest != b.digest)
+
+    result = correct_without_golden(
+        baseline_nodes=baseline_nodes,
+        current_grid=damaged,
+        meta=meta,
+        row_group_size=2,
+        col_group_size=2,
+        hash_bits=16,
+    )
+    assert len(result.mismatched_after) <= mismatched_before
+    assert len(result.mismatched_after) < len(result.mismatched_before)
 

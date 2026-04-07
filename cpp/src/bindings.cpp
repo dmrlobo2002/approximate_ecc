@@ -20,6 +20,20 @@ static GridMeta extract_meta(py::object meta_obj) {
     return m;
 }
 
+// Extract a C++ HashNode from a Python HashNode dataclass or dict.
+static HashNode extract_hash_node(py::object obj) {
+    HashNode n;
+    n.node_id     = obj.attr("node_id").cast<std::string>();
+    n.axis        = obj.attr("axis").cast<std::string>();
+    n.group_index = obj.attr("group_index").cast<int>();
+    n.hash_bits   = obj.attr("hash_bits").cast<int>();
+    n.digest      = obj.attr("digest").cast<uint32_t>();
+    for (auto idx : obj.attr("source_indices"))
+        n.source_indices.push_back(idx.cast<int>());
+    std::sort(n.source_indices.begin(), n.source_indices.end());
+    return n;
+}
+
 PYBIND11_MODULE(_ecc_cpp, mod) {
     mod.doc() = "Approximate ECC — C++ accelerated backend";
 
@@ -87,6 +101,59 @@ PYBIND11_MODULE(_ecc_cpp, mod) {
         py::arg("globally_pinned")       = py::none(),
         py::arg("hash_type")             = "crc",
         "C++ accelerated correct_with_dag. Returns a dict matching Python SolveResult fields."
+    );
+
+    mod.def("correct_without_golden",
+        [](py::list baseline_nodes_obj,
+           py::list current_grid,
+           py::object meta_obj,
+           int row_group_size,
+           int col_group_size,
+           int hash_bits,
+           const std::string& tail_policy,
+           bool record_step_snapshots,
+           int max_flips,
+           const std::string& hash_type) -> py::dict
+        {
+            GridMeta meta = extract_meta(meta_obj);
+            auto cpp_current = current_grid.cast<std::vector<std::vector<int>>>();
+
+            std::vector<HashNode> baseline_nodes;
+            baseline_nodes.reserve(baseline_nodes_obj.size());
+            for (auto item : baseline_nodes_obj)
+                baseline_nodes.push_back(extract_hash_node(item.cast<py::object>()));
+
+            SolveResult res = correct_without_golden(
+                baseline_nodes, cpp_current, meta,
+                row_group_size, col_group_size, hash_bits,
+                tail_policy, record_step_snapshots, max_flips, hash_type);
+
+            py::dict out;
+            out["corrected_grid"]           = res.corrected_grid;
+            out["mismatched_before"]        = py::set(py::cast(res.mismatched_before));
+            out["mismatched_after"]         = py::set(py::cast(res.mismatched_after));
+            out["steps"]                    = res.steps;
+            out["step_snapshots"]           = py::list();
+            out["total_combos_evaluated"]   = res.total_combos_evaluated;
+            out["total_nodes_visited"]      = res.total_nodes_visited;
+            out["max_flip_level_reached"]   = res.max_flip_level_reached;
+            out["nodes_with_no_correction"] = res.nodes_with_no_correction;
+            out["solve_time_seconds"]       = res.solve_time_seconds;
+            out["grid_hd_before"]           = res.grid_hd_before;
+            out["grid_hd_after"]            = res.grid_hd_after;
+            return out;
+        },
+        py::arg("baseline_nodes"),
+        py::arg("current_grid"),
+        py::arg("meta"),
+        py::arg("row_group_size"),
+        py::arg("col_group_size"),
+        py::arg("hash_bits"),
+        py::arg("tail_policy")           = "include_partial",
+        py::arg("record_step_snapshots") = false,
+        py::arg("max_flips")             = 2,
+        py::arg("hash_type")             = "crc",
+        "C++ accelerated correct_without_golden. Returns a dict matching Python SolveResult fields."
     );
 
     // ------------------------------------------------------------------

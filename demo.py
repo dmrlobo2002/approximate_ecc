@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import random
 
-from bitflip_solver import correct_with_dag
+from bitflip_solver import correct_with_dag, correct_without_golden
 from grid_shuffle import bits_to_grid, grid_to_bits, source_index_to_grid_coord
 from group_hash import build_hash_nodes
 from hash_dag import build_hash_graph
@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--viz", action="store_true", help="Render DAG PNG(s) colored by mismatched nodes")
     parser.add_argument("--viz-dir", type=str, default="dag_viz", help="Output directory for DAG PNGs")
     parser.add_argument("--viz-prefix", type=str, default="dag", help="Prefix for generated DAG PNG filenames")
+    parser.add_argument("--golden-bits", action="store_true", help="Use original (golden) bits for solver scoring; without this flag the solver uses only stored hashes")
     return parser.parse_args()
 
 
@@ -83,26 +84,49 @@ def main() -> None:
     mismatched = sum(1 for a, b in zip(baseline_hashes, current_hashes) if a.digest != b.digest)
     print(f"Initial mismatched hashes: {mismatched}")
 
-    result = correct_with_dag(
-        baseline_grid=baseline_grid,
-        current_grid=current_grid,
-        meta=meta,
-        row_group_size=args.row_group_size,
-        col_group_size=args.col_group_size,
-        hash_bits=args.hash_bits,
-        tail_policy=args.tail_policy,
-        record_step_snapshots=args.viz,
-        hash_type=args.hash_type,
-    )
+    if args.golden_bits:
+        result = correct_with_dag(
+            baseline_grid=baseline_grid,
+            current_grid=current_grid,
+            meta=meta,
+            row_group_size=args.row_group_size,
+            col_group_size=args.col_group_size,
+            hash_bits=args.hash_bits,
+            tail_policy=args.tail_policy,
+            record_step_snapshots=args.viz,
+            hash_type=args.hash_type,
+        )
+    else:
+        result = correct_without_golden(
+            baseline_nodes=baseline_hashes,
+            current_grid=current_grid,
+            meta=meta,
+            row_group_size=args.row_group_size,
+            col_group_size=args.col_group_size,
+            hash_bits=args.hash_bits,
+            tail_policy=args.tail_policy,
+            record_step_snapshots=args.viz,
+            hash_type=args.hash_type,
+        )
     print(f"Mismatched before: {len(result.mismatched_before)}")
     print(f"Mismatched after: {len(result.mismatched_after)}")
     for step in result.steps:
         print(step)
 
-    print(f"Grid HD before repair (bits damaged): {result.grid_hd_before}")
-    print(f"Grid HD after repair  (bits remaining wrong): {result.grid_hd_after}")
-    bits_recovered = result.grid_hd_before - result.grid_hd_after
-    print(f"Bits recovered: {bits_recovered}/{result.grid_hd_before}")
+    # Compute grid HD against baseline for display (available in demo even without --golden-bits)
+    rows, cols = len(baseline_grid), len(baseline_grid[0]) if baseline_grid else 0
+    grid_hd_before = sum(
+        baseline_grid[r][c] != current_grid[r][c]
+        for r in range(rows) for c in range(cols)
+    )
+    grid_hd_after = sum(
+        baseline_grid[r][c] != result.corrected_grid[r][c]
+        for r in range(rows) for c in range(cols)
+    )
+    print(f"Grid HD before repair (bits damaged): {grid_hd_before}")
+    print(f"Grid HD after repair  (bits remaining wrong): {grid_hd_after}")
+    bits_recovered = grid_hd_before - grid_hd_after
+    print(f"Bits recovered: {bits_recovered}/{grid_hd_before}")
 
     restored_bits = grid_to_bits(result.corrected_grid, meta, key=key)
     print("Recovered original bits:", restored_bits == bits)

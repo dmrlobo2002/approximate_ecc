@@ -33,3 +33,16 @@ SolveResult correct_with_dag(
     const std::unordered_set<int>& globally_pinned = {},
     const std::string& hash_type = "crc"
 );
+
+SolveResult correct_without_golden(
+    const std::vector<HashNode>& baseline_nodes,
+    const std::vector<std::vector<int>>& current_grid,
+    const GridMeta& meta,
+    int row_group_size,
+    int col_group_size,
+    int hash_bits,
+    const std::string& tail_policy = "include_partial",
+    bool record_step_snapshots = false,
+    int max_flips = 2,
+    const std::string& hash_type = "crc"
+);

@@ -385,3 +385,165 @@ SolveResult correct_with_dag(
         grid_hd_after
     };
 }
+
+// ---- No-golden-bits solver ---------------------------------------------
+
+SolveResult correct_without_golden(
+    const std::vector<HashNode>& baseline_nodes,
+    const std::vector<std::vector<int>>& current_grid,
+    const GridMeta& meta,
+    int row_group_size,
+    int col_group_size,
+    int hash_bits,
+    const std::string& tail_policy,
+    bool /*record_step_snapshots*/,
+    int max_flips,
+    const std::string& hash_type)
+{
+    auto t_start = std::chrono::steady_clock::now();
+
+    auto current_nodes = build_hash_nodes(
+        current_grid, meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type);
+
+    std::unordered_map<std::string, HashNode> baseline_map;
+    baseline_map.reserve(baseline_nodes.size());
+    for (const auto& n : baseline_nodes) baseline_map[n.node_id] = n;
+
+    std::vector<std::string> mismatched_before;
+    for (const auto& n : current_nodes)
+        if (baseline_map.at(n.node_id).digest != n.digest)
+            mismatched_before.push_back(n.node_id);
+
+    auto working_grid = current_grid;
+
+    std::unordered_map<std::string, HashNode> live_nodes;
+    live_nodes.reserve(current_nodes.size());
+    for (const auto& n : current_nodes) live_nodes[n.node_id] = n;
+
+    int live_matched = 0;
+    for (const auto& [nid, n] : live_nodes)
+        if (baseline_map.at(nid).digest == n.digest) live_matched++;
+
+    GroupHashContext ctx = build_group_context(
+        meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type);
+
+    // Order by covered_bits ASC, then node_id for determinism
+    std::vector<HashNode> ordered_nodes = baseline_nodes;
+    std::sort(ordered_nodes.begin(), ordered_nodes.end(),
+              [](const HashNode& a, const HashNode& b) {
+                  if (a.covered_bits() != b.covered_bits())
+                      return a.covered_bits() < b.covered_bits();
+                  return a.node_id < b.node_id;
+              });
+
+    std::vector<std::string> steps;
+    int total_combos_evaluated   = 0;
+    int total_nodes_visited      = 0;
+    int max_flip_level_reached   = 0;
+    int nodes_with_no_correction = 0;
+
+    int n = meta.n;
+
+    bool any_fixed_global = true;
+    while (any_fixed_global && live_matched < (int)baseline_map.size()) {
+        any_fixed_global = false;
+
+        for (const auto& node : ordered_nodes) {
+            if (live_nodes.at(node.node_id).digest == baseline_map.at(node.node_id).digest)
+                continue;
+
+            total_nodes_visited++;
+            const std::vector<int>& src_indices = live_nodes.at(node.node_id).source_indices;
+            bool committed = false;
+
+            for (int flips = 1; flips <= max_flips && !committed; flips++) {
+                enumerate_combinations(src_indices, flips,
+                    [&](const std::vector<int>& combo) -> bool {
+                        total_combos_evaluated++;
+
+                        // Collect affected node ids
+                        std::vector<std::string> affected_ids;
+                        {
+                            std::unordered_set<std::string> seen;
+                            for (int si : combo) {
+                                auto it = ctx.src_to_node_ids.find(si);
+                                if (it == ctx.src_to_node_ids.end()) continue;
+                                for (const auto& nid : it->second)
+                                    if (seen.insert(nid).second)
+                                        affected_ids.push_back(nid);
+                            }
+                        }
+
+                        // Save state
+                        std::vector<std::pair<std::string, HashNode>> saved;
+                        saved.reserve(affected_ids.size());
+                        for (const auto& nid : affected_ids)
+                            saved.emplace_back(nid, live_nodes.at(nid));
+
+                        // Apply flips
+                        for (int si : combo) {
+                            int linear = ctx.meta.source_to_grid[si];
+                            int r = linear / n, c = linear % n;
+                            working_grid[r][c] ^= 1;
+                        }
+                        for (const auto& nid : affected_ids)
+                            live_nodes[nid] = recompute_node(live_nodes[nid], working_grid, ctx);
+
+                        if (live_nodes.at(node.node_id).digest == baseline_map.at(node.node_id).digest) {
+                            // Accept: update live_matched
+                            for (const auto& [nid, old_node] : saved) {
+                                bool was = (old_node.digest == baseline_map.at(nid).digest);
+                                bool now = (live_nodes.at(nid).digest == baseline_map.at(nid).digest);
+                                live_matched += (int)now - (int)was;
+                            }
+                            if (flips > max_flip_level_reached) max_flip_level_reached = flips;
+                            steps.push_back("Corrected " + node.node_id +
+                                            " using " + std::to_string(flips) + " flips.");
+                            committed = true;
+                            any_fixed_global = true;
+                            return false;  // stop enumeration
+                        }
+
+                        // Undo
+                        for (const auto& [nid, old_node] : saved) live_nodes[nid] = old_node;
+                        for (int si : combo) {
+                            int linear = ctx.meta.source_to_grid[si];
+                            int r = linear / n, c = linear % n;
+                            working_grid[r][c] ^= 1;
+                        }
+                        return true;  // continue enumeration
+                    });
+
+                if (committed) break;
+            }
+
+            if (!committed) {
+                nodes_with_no_correction++;
+            } else if (live_matched == (int)baseline_map.size()) {
+                break;
+            }
+        }
+    }
+
+    std::vector<std::string> mismatched_after;
+    for (const auto& [nid, nd] : live_nodes)
+        if (nd.digest != baseline_map.at(nid).digest)
+            mismatched_after.push_back(nid);
+
+    auto t_end = std::chrono::steady_clock::now();
+    double elapsed = std::chrono::duration<double>(t_end - t_start).count();
+
+    return SolveResult{
+        std::move(working_grid),
+        std::move(mismatched_before),
+        std::move(mismatched_after),
+        std::move(steps),
+        total_combos_evaluated,
+        total_nodes_visited,
+        max_flip_level_reached,
+        nodes_with_no_correction,
+        elapsed,
+        0,  // grid_hd_before: unavailable without baseline_grid
+        0   // grid_hd_after
+    };
+}
