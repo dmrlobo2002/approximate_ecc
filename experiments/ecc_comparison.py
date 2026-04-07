@@ -33,23 +33,43 @@ def hamming_overhead(data_bits: int) -> dict:
 
 def bch_overhead(data_bits: int, t: int) -> dict:
     """
-    Approximate BCH code overhead for correcting t errors in ~data_bits data bits.
+    Exact BCH code overhead for correcting t errors in data_bits data bits.
 
-    Uses the standard BCH bound: for a code of block length n = 2^m - 1,
-    the parity check matrix has at most 2t*m rows, so parity bits <= 2t*m
-    where m = ceil(log2(data_bits + 1)).
+    Computes the exact generator polynomial degree via 2-cyclotomic cosets over GF(2^m).
+    The generator polynomial is LCM(m_1, m_3, m_5, ..., m_{2t-1}) where m_i is the
+    minimal polynomial of alpha^i. Elements in the same cyclotomic coset share a
+    minimal polynomial, so we sum coset sizes for each distinct odd coset up to 2t-1.
 
-    This is an upper bound on parity bits; real BCH codes may use fewer.
+    Overhead is reported relative to data_bits (as for a shortened BCH code), which
+    is the relevant metric when comparing against a fixed data size.
     """
     m = max(1, math.ceil(math.log2(data_bits + 1)))
-    n = (1 << m) - 1          # BCH block length (nearest 2^m - 1 >= data_bits)
-    parity_bits = min(2 * t * m, n - 1)
+    n = (1 << m) - 1  # primitive BCH block length: 2^m - 1
+
+    # Compute exact parity bits via 2-cyclotomic cosets mod n.
+    # Roots needed: alpha^1, alpha^3, ..., alpha^(2t-1).
+    # Any root already covered by a prior coset adds no new parity bits.
+    covered: set[int] = set()
+    parity_bits = 0
+    for i in range(1, 2 * t, 2):  # odd indices 1, 3, 5, ..., 2t-1
+        root = i % n
+        if root in covered:
+            continue
+        coset: set[int] = set()
+        j = root
+        while j not in coset:
+            coset.add(j)
+            j = (j * 2) % n
+        covered |= coset
+        parity_bits += len(coset)
+
+    parity_bits = min(parity_bits, n - 1)
     actual_data_bits = n - parity_bits
     return {
         "scheme": f"BCH({n},{actual_data_bits},t={t})",
         "data_bits": actual_data_bits,
         "parity_bits": parity_bits,
-        "overhead_ratio": parity_bits / actual_data_bits,
+        "overhead_ratio": parity_bits / data_bits,  # overhead vs. actual data size
         "correctable_bits": t,
         "detectable_bits": 2 * t,
     }
