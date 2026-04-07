@@ -129,7 +129,7 @@ def main() -> None:
     except ModuleNotFoundError as e:
         raise RuntimeError("matplotlib required; install it or use --no-plot") from e
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))
     fig.suptitle(
         f"Approximate ECC: {args.bit_length}-bit block — correction vs flip count",
         fontsize=14, fontweight="bold",
@@ -145,6 +145,7 @@ def main() -> None:
 
         xs, ys_rate, yerr_rate = [], [], []
         xs2, ys_time, yerr_time = [], [], []
+        xs3, ys_combos, yerr_combos = [], [], []
         for fc in flip_counts:
             subset = [r for r in rows if r["hash_bits"] == hash_bits and r["group_size"] == group_size and r["flip_count"] == fc]
             n = len(subset)
@@ -160,9 +161,17 @@ def main() -> None:
             ys_time.append(a.mean)
             yerr_time.append(a.sem)
 
+            combos = [r["total_combos_evaluated"] for r in subset]
+            ac = agg(combos)
+            xs3.append(fc)
+            ys_combos.append(ac.mean)
+            yerr_combos.append(ac.sem)
+
         ax1.errorbar(xs, ys_rate, yerr=yerr_rate, marker="o", linewidth=2, capsize=3,
                      label=label, color=color)
         ax2.errorbar(xs2, ys_time, yerr=yerr_time, marker="o", linewidth=2, capsize=3,
+                     label=label, color=color)
+        ax3.errorbar(xs3, ys_combos, yerr=yerr_combos, marker="o", linewidth=2, capsize=3,
                      label=label, color=color)
 
     ax1.axhline(100, linestyle="--", color="gray", linewidth=1, alpha=0.5)
@@ -184,6 +193,12 @@ def main() -> None:
     ax2.set_ylabel("Mean solve time (ms)")
     ax2.grid(True, alpha=0.3)
     ax2.legend(fontsize=9)
+
+    ax3.set_title("Mean hash comparisons vs injected bit-flips")
+    ax3.set_xlabel("Injected bit-flips")
+    ax3.set_ylabel("Mean combos evaluated (hash checks)")
+    ax3.grid(True, alpha=0.3)
+    ax3.legend(fontsize=9)
 
     plt.tight_layout()
     out_path = os.path.join(args.out_dir, "fig1_headline.png")

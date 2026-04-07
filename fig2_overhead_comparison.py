@@ -22,7 +22,7 @@ from experiments.common import (
     write_csv,
     write_json,
 )
-from experiments.ecc_comparison import bch_overhead
+from experiments.ecc_comparison import bch_decode_ops, bch_overhead
 from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTH = 4096
@@ -132,11 +132,12 @@ def main() -> None:
             "overhead_ratio": compute_overhead_ratio(args.bit_length, group_size, group_size, hash_bits),
             "fully_corrected": int(trial["fully_corrected"]),
             "solve_time_ms": trial["solve_time_ms"],
+            "total_combos_evaluated": trial["total_combos_evaluated"],
         })
 
     write_csv(os.path.join(args.out_dir, "fig2_ours.csv"), our_rows,
               ["hash_bits", "group_size", "flip_count", "key_id", "overhead_ratio",
-               "fully_corrected", "solve_time_ms"])
+               "fully_corrected", "solve_time_ms", "total_combos_evaluated"])
 
     # Determine max correctable flip count per config (success_rate >= threshold)
     our_operating_points: list[dict[str, Any]] = []
@@ -178,7 +179,7 @@ def main() -> None:
     except ModuleNotFoundError as e:
         raise RuntimeError("matplotlib required; install it or use --no-plot") from e
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(21, 7))
     fig.suptitle(
         f"Overhead vs Correction Capability: Approximate ECC vs BCH  (block size = {args.bit_length} bits)",
         fontsize=13, fontweight="bold",
@@ -232,6 +233,39 @@ def main() -> None:
     ax2.set_title("Correction efficiency (higher is better)")
     ax2.grid(True, alpha=0.3)
     ax2.legend(fontsize=9)
+
+    # Panel C: decode complexity — our combos evaluated vs BCH GF ops
+    bch_decode_xs = [r["correctable_bits"] for r in bch_rows]
+    bch_decode_ys = [bch_decode_ops(args.bit_length, r["t"]) for r in bch_rows]
+    ax3.plot(bch_decode_xs, bch_decode_ys, "s--", color="#d62728", linewidth=2, markersize=7,
+             label="BCH decode ops (GF field ops, analytical)")
+
+    for i, op in enumerate(our_operating_points):
+        if op["max_correctable"] == 0:
+            continue
+        # Use mean combos at the highest correctable flip count for this config
+        subset = [r for r in our_rows
+                  if r["hash_bits"] == op["hash_bits"] and r["group_size"] == op["group_size"]
+                  and r["flip_count"] == op["max_correctable"]]
+        if not subset:
+            continue
+        mean_combos = agg([r["total_combos_evaluated"] for r in subset]).mean
+        ax3.scatter([op["max_correctable"]], [mean_combos],
+                    s=120, marker=marker_styles[i], color=colors[i], zorder=5,
+                    label=f"Ours: {op['label'].replace(chr(10), ', ')} (hash checks)")
+        ax3.annotate(f"{mean_combos:,.0f}",
+                     xy=(op["max_correctable"], mean_combos),
+                     xytext=(6, 4), textcoords="offset points", fontsize=7, color=colors[i])
+
+    ax3.set_xlabel("Correctable bit-flips")
+    ax3.set_ylabel("Decode operations")
+    ax3.set_title("Decode complexity (lower is better)")
+    ax3.grid(True, alpha=0.3)
+    ax3.legend(fontsize=8)
+    ax3.text(0.05, 0.92,
+             "BCH: GF(2^m) field ops\nOurs: CRC hash checks",
+             transform=ax3.transAxes, fontsize=8,
+             bbox=dict(boxstyle="round,pad=0.3", facecolor="lightyellow", edgecolor="gray", alpha=0.8))
 
     plt.tight_layout()
     out_path = os.path.join(args.out_dir, "fig2_overhead_comparison.png")

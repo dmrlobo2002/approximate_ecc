@@ -115,9 +115,6 @@ CMAKE_OBJCOPY:FILEPATH=/usr/bin/objcopy
 //Path to a program.
 CMAKE_OBJDUMP:FILEPATH=/usr/bin/objdump
 
-//No help, variable specified on the command line.
-CMAKE_PREFIX_PATH:UNINITIALIZED=/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11
-
 //Value Computed by CMake
 CMAKE_PROJECT_COMPAT_VERSION:STATIC=
 
@@ -220,8 +217,8 @@ ecc_cpp_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 ecc_cpp_SOURCE_DIR:STATIC=/home/daniel/Desktop/approximate_ecc
 
-//The directory containing a CMake configuration file for pybind11.
-pybind11_DIR:PATH=/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11
+//No help, variable specified on the command line.
+pybind11_DIR:UNINITIALIZED=/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11
 
 
 ########################

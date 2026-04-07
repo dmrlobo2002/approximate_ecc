@@ -55,6 +55,27 @@ def bch_overhead(data_bits: int, t: int) -> dict:
     }
 
 
+def bch_decode_ops(data_bits: int, t: int) -> int:
+    """
+    Approximate number of GF field operations for BCH decoding with t error correction.
+
+    Dominant costs (all in GF(2^m) field ops):
+      - Syndrome computation:  2t * n        (evaluate 2t polynomials at n points)
+      - Berlekamp-Massey:      ~t^2           (O(t^2) field multiplications)
+      - Chien search:          n * t          (dominant for large n and t)
+      - Forney algorithm:      ~n * t         (error magnitude, same order as Chien)
+
+    Returns an approximate operation count comparable to our total_combos_evaluated.
+    """
+    m = max(1, math.ceil(math.log2(data_bits + 1)))
+    n = (1 << m) - 1
+    syndrome_cost = 2 * t * n
+    bm_cost = t * t
+    chien_cost = n * t
+    forney_cost = n * t
+    return syndrome_cost + bm_cost + chien_cost + forney_cost
+
+
 def ldpc_overhead(data_bits: int, code_rate: float = 0.5) -> dict:
     """
     LDPC code at a given code rate R = data_bits / (data_bits + parity_bits).

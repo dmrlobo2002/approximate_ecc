@@ -20,9 +20,6 @@ events:
     names:
       - "uname"
     candidate_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/bin/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/sbin/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/"
       - "/home/daniel/Desktop/approximate_ecc/venv/bin/"
       - "/home/daniel/.local/bin/"
       - "/home/daniel/.npm-global/bin/"
@@ -36,9 +33,6 @@ events:
       - "/usr/local/games/"
       - "/snap/bin/"
     searched_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/bin/uname"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/sbin/uname"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/uname"
       - "/home/daniel/Desktop/approximate_ecc/venv/bin/uname"
       - "/home/daniel/.local/bin/uname"
       - "/home/daniel/.npm-global/bin/uname"
@@ -47,8 +41,6 @@ events:
       - "/usr/sbin/uname"
     found: "/usr/bin/uname"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -92,9 +84,6 @@ events:
       - "make"
       - "smake"
     candidate_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/bin/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/sbin/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/"
       - "/home/daniel/Desktop/approximate_ecc/venv/bin/"
       - "/home/daniel/.local/bin/"
       - "/home/daniel/.npm-global/bin/"
@@ -108,9 +97,6 @@ events:
       - "/usr/local/games/"
       - "/snap/bin/"
     searched_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/bin/gmake"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/sbin/gmake"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/gmake"
       - "/home/daniel/Desktop/approximate_ecc/venv/bin/gmake"
       - "/home/daniel/.local/bin/gmake"
       - "/home/daniel/.npm-global/bin/gmake"
@@ -119,8 +105,6 @@ events:
       - "/usr/sbin/gmake"
     found: "/usr/bin/gmake"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -165,9 +149,6 @@ events:
       - "icx"
       - "clang++"
     candidate_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/bin/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/sbin/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/"
       - "/home/daniel/Desktop/approximate_ecc/venv/bin/"
       - "/home/daniel/.local/bin/"
       - "/home/daniel/.npm-global/bin/"
@@ -181,9 +162,6 @@ events:
       - "/usr/local/games/"
       - "/snap/bin/"
     searched_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/bin/c++"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/sbin/c++"
-      - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/c++"
       - "/home/daniel/Desktop/approximate_ecc/venv/bin/c++"
       - "/home/daniel/.local/bin/c++"
       - "/home/daniel/.npm-global/bin/c++"
@@ -192,8 +170,6 @@ events:
       - "/usr/sbin/c++"
     found: "/usr/bin/c++"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -235,8 +211,6 @@ events:
       - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/"
     found: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerId.cpp.in"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -308,8 +282,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/ar"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -359,8 +331,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/ranlib"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -410,8 +380,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/strip"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -461,8 +429,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/ld"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -512,8 +478,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/nm"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -563,8 +527,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/objdump"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -614,8 +576,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/objcopy"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -665,8 +625,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/readelf"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -729,8 +687,6 @@ events:
       - "/snap/bin/dlltool"
     found: false
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -780,8 +736,6 @@ events:
       - "/snap/bin/"
     found: "/usr/bin/addr2line"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -844,8 +798,6 @@ events:
       - "/snap/bin/tapi"
     found: false
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -911,8 +863,6 @@ events:
       - "/snap/bin/gcc-ar-13.3"
     found: "/usr/bin/gcc-ar-13"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -978,8 +928,6 @@ events:
       - "/snap/bin/gcc-ranlib-13.3"
     found: "/usr/bin/gcc-ranlib-13"
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -1004,8 +952,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi"
-      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi"
+      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4"
+      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -1016,13 +964,13 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi'
+        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4'
         
-        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_26483/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_26483.dir/build.make CMakeFiles/cmTC_26483.dir/build
-        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi'
-        Building CXX object CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o
-        /usr/bin/c++   -v -o CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d1d70/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d1d70.dir/build.make CMakeFiles/cmTC_d1d70.dir/build
+        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4'
+        Building CXX object CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/bin/c++   -v -o CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp
         Using built-in specs.
         COLLECT_GCC=/usr/bin/c++
         OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
@@ -1032,8 +980,8 @@ events:
         Thread model: posix
         Supported LTO compression algorithms: zlib zstd
         gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_26483.dir/'
-         /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_26483.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccBT3pM2.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d1d70.dir/'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_d1d70.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccaEOt7L.s
         GNU C++17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)
         	compiled by GNU C version 13.3.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.26-GMP
         
@@ -1054,14 +1002,14 @@ events:
          /usr/include
         End of search list.
         Compiler executable checksum: 7896445e4990772fdae9dc0659a99266
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_26483.dir/'
-         as -v --64 -o CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccBT3pM2.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d1d70.dir/'
+         as -v --64 -o CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccaEOt7L.s
         GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42
         COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.'
-        Linking CXX executable cmTC_26483
-        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_26483.dir/link.txt --verbose=1
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.'
+        Linking CXX executable cmTC_d1d70
+        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d1d70.dir/link.txt --verbose=1
         Using built-in specs.
         COLLECT_GCC=/usr/bin/c++
         COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper
@@ -1074,14 +1022,14 @@ events:
         gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
         COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_26483' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_26483.'
-         /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccAxQhbO.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_26483 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d1d70' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d1d70.'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYd0WWs.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d1d70 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
         collect2 version 13.3.0
-        /usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccAxQhbO.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_26483 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
+        /usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYd0WWs.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d1d70 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Ubuntu) 2.42
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_26483' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_26483.'
-        /usr/bin/c++  -v -Wl,-v CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_26483
-        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi'
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d1d70' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d1d70.'
+        /usr/bin/c++  -v -Wl,-v CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_d1d70
+        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4'
         
       exitCode: 0
   -
@@ -1122,13 +1070,13 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi']
+        ignore line: [Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_26483/fast]
-        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_26483.dir/build.make CMakeFiles/cmTC_26483.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-dOrMoi']
-        ignore line: [Building CXX object CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [/usr/bin/c++   -v -o CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d1d70/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_d1d70.dir/build.make CMakeFiles/cmTC_d1d70.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Qwa4F4']
+        ignore line: [Building CXX object CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/bin/c++   -v -o CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/c++]
         ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
@@ -1138,8 +1086,8 @@ events:
         ignore line: [Thread model: posix]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_26483.dir/']
-        ignore line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_26483.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccBT3pM2.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d1d70.dir/']
+        ignore line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_d1d70.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccaEOt7L.s]
         ignore line: [GNU C++17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)]
         ignore line: [	compiled by GNU C version 13.3.0  GMP version 6.3.0  MPFR version 4.2.1  MPC version 1.3.1  isl version isl-0.26-GMP]
         ignore line: []
@@ -1160,14 +1108,14 @@ events:
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
         ignore line: [Compiler executable checksum: 7896445e4990772fdae9dc0659a99266]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_26483.dir/']
-        ignore line: [ as -v --64 -o CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccBT3pM2.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d1d70.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccaEOt7L.s]
         ignore line: [GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42]
         ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.']
-        ignore line: [Linking CXX executable cmTC_26483]
-        ignore line: [/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_26483.dir/link.txt --verbose=1]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.']
+        ignore line: [Linking CXX executable cmTC_d1d70]
+        ignore line: [/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d1d70.dir/link.txt --verbose=1]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/c++]
         ignore line: [COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper]
@@ -1180,13 +1128,13 @@ events:
         ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
         ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_26483' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_26483.']
-        link line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccAxQhbO.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_26483 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d1d70' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d1d70.']
+        link line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYd0WWs.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d1d70 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
           arg [/usr/libexec/gcc/x86_64-linux-gnu/13/collect2] ==> ignore
           arg [-plugin] ==> ignore
           arg [/usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so] ==> ignore
           arg [-plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper] ==> ignore
-          arg [-plugin-opt=-fresolution=/tmp/ccAxQhbO.res] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/ccYd0WWs.res] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
           arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -1204,7 +1152,7 @@ events:
           arg [-znow] ==> ignore
           arg [-zrelro] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_26483] ==> ignore
+          arg [cmTC_d1d70] ==> ignore
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o]
@@ -1217,7 +1165,7 @@ events:
           arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
           arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../..]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lstdc++] ==> lib [stdc++]
           arg [-lm] ==> lib [m]
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -1228,7 +1176,7 @@ events:
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
         ignore line: [collect2 version 13.3.0]
-        ignore line: [/usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccAxQhbO.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_26483 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_26483.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [/usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccYd0WWs.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d1d70 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_d1d70.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
         linker tool for 'CXX': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> [/usr/lib/x86_64-linux-gnu/Scrt1.o]
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> [/usr/lib/x86_64-linux-gnu/crti.o]
@@ -1257,157 +1205,6 @@ events:
     message: |
       Running the CXX compiler's linker: "/usr/bin/ld" "-v"
       GNU ld (GNU Binutils for Ubuntu) 2.42
-  -
-    kind: "find-v1"
-    backtrace:
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/FindPythonLibsNew.cmake:73 (find_program)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Tools.cmake:44 (find_package)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:237 (include)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake:257 (include)"
-      - "CMakeLists.txt:11 (find_package)"
-    mode: "program"
-    variable: "PYTHON_EXECUTABLE"
-    description: "Path to a program."
-    settings:
-      SearchFramework: "NEVER"
-      SearchAppBundle: "NEVER"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "python"
-    candidate_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/"
-      - "/home/daniel/Desktop/approximate_ecc/venv/bin/"
-    searched_directories:
-      - "/home/daniel/Desktop/approximate_ecc/venv/python"
-    found: "/home/daniel/Desktop/approximate_ecc/venv/bin/python"
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
-      ENV{PATH}:
-        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
-        - "/home/daniel/.local/bin"
-        - "/home/daniel/.npm-global/bin"
-        - "/home/daniel/.local/bin"
-        - "/usr/local/sbin"
-        - "/usr/local/bin"
-        - "/usr/sbin"
-        - "/usr/bin"
-        - "/sbin"
-        - "/bin"
-        - "/usr/games"
-        - "/usr/local/games"
-        - "/snap/bin"
-        - "/snap/bin"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-  -
-    kind: "find-v1"
-    backtrace:
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/FindPythonLibsNew.cmake:287 (find_library)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Tools.cmake:44 (find_package)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:237 (include)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake:257 (include)"
-      - "CMakeLists.txt:11 (find_package)"
-    mode: "library"
-    variable: "PYTHON_LIBRARY"
-    description: "Path to a library."
-    settings:
-      SearchFramework: "NEVER"
-      SearchAppBundle: "NEVER"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "python3.12"
-    candidate_directories:
-      - "/usr/lib/x86_64-linux-gnu/x86_64-linux-gnu/"
-      - "/usr/lib/x86_64-linux-gnu/"
-    searched_directories:
-      - "/usr/lib/x86_64-linux-gnu/x86_64-linux-gnu/"
-    found: "/usr/lib/x86_64-linux-gnu/libpython3.12.so"
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
-      ENV{PATH}:
-        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
-        - "/home/daniel/.local/bin"
-        - "/home/daniel/.npm-global/bin"
-        - "/home/daniel/.local/bin"
-        - "/usr/local/sbin"
-        - "/usr/local/bin"
-        - "/usr/sbin"
-        - "/usr/bin"
-        - "/sbin"
-        - "/bin"
-        - "/usr/games"
-        - "/usr/local/games"
-        - "/snap/bin"
-        - "/snap/bin"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-      CMAKE_SYSTEM_LIBRARY_PATH:
-        - "/usr/lib/X11"
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
-      - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CheckCXXCompilerFlag.cmake:103 (cmake_check_compiler_flag)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:332 (check_cxx_compiler_flag)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:377 (_pybind11_return_if_cxx_and_linker_flags_work)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:438 (_pybind11_generate_lto)"
-      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake:257 (include)"
-      - "CMakeLists.txt:11 (find_package)"
-    checks:
-      - "Performing Test HAS_FLTO_AUTO"
-    directories:
-      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-JpiS6q"
-      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-JpiS6q"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: ""
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_CXX_STDLIB_MODULES_JSON: ""
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: ""
-    buildResult:
-      variable: "HAS_FLTO_AUTO"
-      cached: true
-      stdout: |
-        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-JpiS6q'
-        
-        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c7b00/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_c7b00.dir/build.make CMakeFiles/cmTC_c7b00.dir/build
-        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-JpiS6q'
-        Building CXX object CMakeFiles/cmTC_c7b00.dir/src.cxx.o
-        /usr/bin/c++ -DHAS_FLTO_AUTO  -std=gnu++17   -flto=auto -fno-fat-lto-objects -o CMakeFiles/cmTC_c7b00.dir/src.cxx.o -c /home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-JpiS6q/src.cxx
-        Linking CXX executable cmTC_c7b00
-        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c7b00.dir/link.txt --verbose=1
-        /usr/bin/c++ CMakeFiles/cmTC_c7b00.dir/src.cxx.o -o cmTC_c7b00  -flto=auto
-        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-JpiS6q'
-        
-      exitCode: 0
   -
     kind: "find_package-v1"
     backtrace:
@@ -1466,13 +1263,228 @@ events:
         path: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/pkgRedirects/share/cps/pybind11.cps"
         mode: "cps"
         reason: "no_exist"
-    found:
-      path: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake"
-      mode: "config"
-      version: "3.0.3"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.local/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.local/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.local/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.local/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.local/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.npm-global/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.npm-global/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.npm-global/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.npm-global/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/.npm-global/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/local/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/local/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/local/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/local/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/local/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/games/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/games/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/games/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/games/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/games/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/local/games/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/local/games/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/usr/local/games/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/local/games/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/usr/local/games/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/snap/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/snap/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/snap/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/snap/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/snap/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/pybind11Config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/pybind11-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/lib/x86_64-linux-gnu/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/lib/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/share/cps/pybind11.cps"
+        mode: "cps"
+        reason: "no_exist"
+    found: null
     search_context:
-      CMAKE_PREFIX_PATH:
-        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11"
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
@@ -1498,4 +1510,155 @@ events:
         - "/usr/X11R6"
         - "/usr/pkg"
         - "/opt"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/FindPythonLibsNew.cmake:73 (find_program)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Tools.cmake:44 (find_package)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:237 (include)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake:257 (include)"
+      - "CMakeLists.txt:11 (find_package)"
+    mode: "program"
+    variable: "PYTHON_EXECUTABLE"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python"
+    candidate_directories:
+      - "/home/daniel/Desktop/approximate_ecc/venv/"
+      - "/home/daniel/Desktop/approximate_ecc/venv/bin/"
+    searched_directories:
+      - "/home/daniel/Desktop/approximate_ecc/venv/python"
+    found: "/home/daniel/Desktop/approximate_ecc/venv/bin/python"
+    search_context:
+      ENV{PATH}:
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/.local/bin"
+        - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/games"
+        - "/usr/local/games"
+        - "/snap/bin"
+        - "/snap/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/FindPythonLibsNew.cmake:287 (find_library)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Tools.cmake:44 (find_package)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:237 (include)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake:257 (include)"
+      - "CMakeLists.txt:11 (find_package)"
+    mode: "library"
+    variable: "PYTHON_LIBRARY"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python3.12"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/x86_64-linux-gnu/"
+      - "/usr/lib/x86_64-linux-gnu/"
+    searched_directories:
+      - "/usr/lib/x86_64-linux-gnu/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libpython3.12.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/.local/bin"
+        - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/games"
+        - "/usr/local/games"
+        - "/snap/bin"
+        - "/snap/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CheckCXXCompilerFlag.cmake:103 (cmake_check_compiler_flag)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:332 (check_cxx_compiler_flag)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:377 (_pybind11_return_if_cxx_and_linker_flags_work)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Common.cmake:438 (_pybind11_generate_lto)"
+      - "venv/lib/python3.12/site-packages/pybind11/share/cmake/pybind11/pybind11Config.cmake:257 (include)"
+      - "CMakeLists.txt:11 (find_package)"
+    checks:
+      - "Performing Test HAS_FLTO_AUTO"
+    directories:
+      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Fg2lgg"
+      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Fg2lgg"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: ""
+    buildResult:
+      variable: "HAS_FLTO_AUTO"
+      cached: true
+      stdout: |
+        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Fg2lgg'
+        
+        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f99c5/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f99c5.dir/build.make CMakeFiles/cmTC_f99c5.dir/build
+        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Fg2lgg'
+        Building CXX object CMakeFiles/cmTC_f99c5.dir/src.cxx.o
+        /usr/bin/c++ -DHAS_FLTO_AUTO  -std=gnu++17   -flto=auto -fno-fat-lto-objects -o CMakeFiles/cmTC_f99c5.dir/src.cxx.o -c /home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Fg2lgg/src.cxx
+        Linking CXX executable cmTC_f99c5
+        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f99c5.dir/link.txt --verbose=1
+        /usr/bin/c++ CMakeFiles/cmTC_f99c5.dir/src.cxx.o -o cmTC_f99c5  -flto=auto
+        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-Fg2lgg'
+        
+      exitCode: 0
 ...
