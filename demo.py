@@ -18,6 +18,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rounds", type=int, default=8, help="Feistel rounds")
     parser.add_argument("--row-group-size", type=int, default=1, help="Non-overlapping row group size")
     parser.add_argument("--col-group-size", type=int, default=1, help="Non-overlapping column group size")
+    parser.add_argument("--row-splits", type=int, default=1, help="Split each row hash node into N column sub-ranges")
+    parser.add_argument("--col-splits", type=int, default=1, help="Split each col hash node into N row sub-ranges")
     parser.add_argument("--hash-bits", type=int, default=16, help="Hash bit-width (8/16/32 for CRC; any positive int for simhash)")
     parser.add_argument("--hash-type", choices=["crc", "simhash"], default="crc", help="Hash scheme")
     parser.add_argument("--tail-policy", choices=["include_partial", "pad_with_zeros", "drop_partial"], default="include_partial")
@@ -74,6 +76,8 @@ def main() -> None:
         hash_bits=args.hash_bits,
         tail_policy=args.tail_policy,
         hash_type=args.hash_type,
+        row_splits=args.row_splits,
+        col_splits=args.col_splits,
     )
     current_hashes = build_hash_nodes(
         current_grid,
@@ -83,6 +87,8 @@ def main() -> None:
         hash_bits=args.hash_bits,
         tail_policy=args.tail_policy,
         hash_type=args.hash_type,
+        row_splits=args.row_splits,
+        col_splits=args.col_splits,
     )
     mismatched = sum(1 for a, b in zip(baseline_hashes, current_hashes) if a.digest != b.digest)
     print(f"Initial mismatched hashes: {mismatched}")
@@ -100,6 +106,8 @@ def main() -> None:
             max_combos=args.max_combos,
             hash_type=args.hash_type,
             max_flips_ceiling=args.max_flips_ceiling,
+            row_splits=args.row_splits,
+            col_splits=args.col_splits,
         )
     else:
         result = correct_without_golden(
@@ -113,6 +121,8 @@ def main() -> None:
             record_step_snapshots=args.viz,
             max_flips=args.max_flips,
             hash_type=args.hash_type,
+            row_splits=args.row_splits,
+            col_splits=args.col_splits,
         )
     print(f"Mismatched before: {len(result.mismatched_before)}")
     print(f"Mismatched after: {len(result.mismatched_after)}")

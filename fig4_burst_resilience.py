@@ -86,7 +86,7 @@ def main() -> None:
                 flip_indices = get_flip_indices(fc, args.bit_length, mode, rng)
                 all_tasks.append((
                     bits, key, args.rounds, flip_indices,
-                    GROUP_SIZE, GROUP_SIZE, HASH_BITS, "include_partial", None, 0, "crc",
+                    GROUP_SIZE, GROUP_SIZE, HASH_BITS, "include_partial", None, 0, "crc", 1, 1,
                 ))
                 all_metas.append((mode, fc, key_id))
 

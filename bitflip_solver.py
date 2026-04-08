@@ -118,18 +118,19 @@ def _count_node_flips(
     current_grid: list[list[int]],
     ctx: "GroupHashContext",
 ) -> int:
-    n = ctx.meta.n
     if node.axis == "row":
-        r0, r1 = ctx.row_groups[node.group_index]
+        r0, r1 = ctx.row_groups[node.group_index // ctx.row_splits]
+        c0, c1 = ctx.row_node_col_ranges[node.group_index]
         return sum(
             baseline_grid[r][c] != current_grid[r][c]
-            for r in range(r0, r1) for c in range(n)
+            for r in range(r0, r1) for c in range(c0, c1)
         )
     else:
-        c0, c1 = ctx.col_groups[node.group_index]
+        c0, c1 = ctx.col_groups[node.group_index // ctx.col_splits]
+        r0, r1 = ctx.col_node_row_ranges[node.group_index]
         return sum(
             baseline_grid[r][c] != current_grid[r][c]
-            for r in range(n) for c in range(c0, c1)
+            for r in range(r0, r1) for c in range(c0, c1)
         )
 
 
@@ -144,6 +145,8 @@ def correct_without_golden(
     record_step_snapshots: bool = False,
     max_flips: int = 8,
     hash_type: str = "crc",
+    row_splits: int = 1,
+    col_splits: int = 1,
 ) -> SolveResult:
     """Solver that requires only stored hash digests, not the original (golden) bits.
 
@@ -165,9 +168,11 @@ def correct_without_golden(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
         hash_type=hash_type,
+        row_splits=row_splits,
+        col_splits=col_splits,
     )
     baseline_map = _node_map(baseline_nodes)
-    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type)
+    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type, row_splits, col_splits)
     live_nodes = _node_map(current_nodes)
     mismatched_before = _mismatched_ids(current_nodes, baseline_nodes)
 
@@ -298,10 +303,12 @@ def correct_with_dag(
     globally_pinned: frozenset = frozenset(),
     hash_type: str = "crc",
     max_flips_ceiling: int | None = None,
+    row_splits: int = 1,
+    col_splits: int = 1,
 ) -> SolveResult:
-    # Use C++ fast path only when the new iterative algorithm is not requested.
-    # Passing max_flips_ceiling opts into the Python iterative solver.
-    if _HAS_CPP and max_flips_ceiling is None:
+    # Use C++ fast path only when splits=1 and the iterative algorithm is not requested.
+    # The C++ extension does not support row_splits/col_splits.
+    if _HAS_CPP and max_flips_ceiling is None and row_splits == 1 and col_splits == 1:
         raw = _cpp_correct_with_dag(
             baseline_grid, current_grid, meta,
             row_group_size, col_group_size, hash_bits,
@@ -331,6 +338,8 @@ def correct_with_dag(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
         hash_type=hash_type,
+        row_splits=row_splits,
+        col_splits=col_splits,
     )
     current_nodes = build_hash_nodes(
         grid=current_grid,
@@ -340,6 +349,8 @@ def correct_with_dag(
         hash_bits=hash_bits,
         tail_policy=tail_policy,
         hash_type=hash_type,
+        row_splits=row_splits,
+        col_splits=col_splits,
     )
     dag: HashGraph = build_hash_graph(baseline_nodes)
     mismatched_before = _mismatched_ids(current_nodes, baseline_nodes)
@@ -352,7 +363,7 @@ def correct_with_dag(
 
     working_grid = _copy_grid(current_grid)
     baseline_map = _node_map(baseline_nodes)
-    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type)
+    ctx = build_group_context(meta, row_group_size, col_group_size, hash_bits, tail_policy, hash_type, row_splits, col_splits)
     if hash_type == "simhash":
         b_map = _node_map(baseline_nodes)
         c_map = _node_map(current_nodes)

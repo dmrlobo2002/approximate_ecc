@@ -168,6 +168,10 @@ class GroupHashContext:
     col_groups: tuple[tuple[int, int], ...]
     src_to_node_ids: dict[int, tuple[str, ...]]
     hash_type: str = "crc"
+    row_splits: int = 1
+    col_splits: int = 1
+    row_node_col_ranges: tuple[tuple[int, int], ...] = ()  # per emitted row node: (c_start, c_end)
+    col_node_row_ranges: tuple[tuple[int, int], ...] = ()  # per emitted col node: (r_start, r_end)
 
 
 def build_group_context(
@@ -177,21 +181,48 @@ def build_group_context(
     hash_bits: int,
     tail_policy: TailPolicy = "include_partial",
     hash_type: str = "crc",
+    row_splits: int = 1,
+    col_splits: int = 1,
 ) -> GroupHashContext:
-    row_groups = tuple(_iter_groups(meta.n, row_group_size, tail_policy))
-    col_groups = tuple(_iter_groups(meta.n, col_group_size, tail_policy))
+    n = meta.n
+    row_groups = tuple(_iter_groups(n, row_group_size, tail_policy))
+    col_groups = tuple(_iter_groups(n, col_group_size, tail_policy))
+
+    row_col_width = math.ceil(n / row_splits)
+    col_row_width = math.ceil(n / col_splits)
+
+    # Build per-emitted-node column sub-ranges for row nodes and row sub-ranges for col nodes.
+    row_node_col_ranges: list[tuple[int, int]] = []
+    for _g in row_groups:
+        for s in range(row_splits):
+            c0 = s * row_col_width
+            c1 = min(c0 + row_col_width, n)
+            row_node_col_ranges.append((c0, c1))
+
+    col_node_row_ranges: list[tuple[int, int]] = []
+    for _g in col_groups:
+        for s in range(col_splits):
+            r0 = s * col_row_width
+            r1 = min(r0 + col_row_width, n)
+            col_node_row_ranges.append((r0, r1))
+
     src_to_node_ids: dict[int, tuple[str, ...]] = {}
     for src_idx in range(meta.original_length):
         linear = meta.source_to_grid[src_idx]
-        r, c = linear // meta.n, linear % meta.n
+        r, c = linear // n, linear % n
         nids: list[str] = []
         row_gidx = r // row_group_size
         col_gidx = c // col_group_size
         if row_gidx < len(row_groups):
-            nids.append(f"row_{row_gidx}")
+            row_sidx = c // row_col_width
+            row_flat = row_gidx * row_splits + row_sidx
+            nids.append(f"row_{row_gidx}" if row_splits == 1 else f"row_{row_gidx}_s{row_sidx}")
         if col_gidx < len(col_groups):
-            nids.append(f"col_{col_gidx}")
+            col_sidx = r // col_row_width
+            col_flat = col_gidx * col_splits + col_sidx
+            nids.append(f"col_{col_gidx}" if col_splits == 1 else f"col_{col_gidx}_s{col_sidx}")
         src_to_node_ids[src_idx] = tuple(nids)
+
     return GroupHashContext(
         meta=meta,
         row_group_size=row_group_size,
@@ -202,21 +233,26 @@ def build_group_context(
         col_groups=col_groups,
         src_to_node_ids=src_to_node_ids,
         hash_type=hash_type,
+        row_splits=row_splits,
+        col_splits=col_splits,
+        row_node_col_ranges=tuple(row_node_col_ranges),
+        col_node_row_ranges=tuple(col_node_row_ranges),
     )
 
 
 def recompute_node(old_node: "HashNode", grid: list[list[int]], ctx: GroupHashContext) -> "HashNode":
-    n = ctx.meta.n
     if old_node.axis == "row":
-        r0, r1 = ctx.row_groups[old_node.group_index]
-        bits = [grid[r][c] for r in range(r0, r1) for c in range(n)]
+        r0, r1 = ctx.row_groups[old_node.group_index // ctx.row_splits]
+        c0, c1 = ctx.row_node_col_ranges[old_node.group_index]
+        bits = [grid[r][c] for r in range(r0, r1) for c in range(c0, c1)]
         if ctx.tail_policy == "pad_with_zeros" and (r1 - r0) < ctx.row_group_size:
-            bits.extend([0] * (ctx.row_group_size - (r1 - r0)) * n)
+            bits.extend([0] * (ctx.row_group_size - (r1 - r0)) * (c1 - c0))
     else:
-        c0, c1 = ctx.col_groups[old_node.group_index]
-        bits = [grid[r][c] for c in range(c0, c1) for r in range(n)]
+        c0, c1 = ctx.col_groups[old_node.group_index // ctx.col_splits]
+        r0, r1 = ctx.col_node_row_ranges[old_node.group_index]
+        bits = [grid[r][c] for c in range(c0, c1) for r in range(r0, r1)]
         if ctx.tail_policy == "pad_with_zeros" and (c1 - c0) < ctx.col_group_size:
-            bits.extend([0] * (ctx.col_group_size - (c1 - c0)) * n)
+            bits.extend([0] * (ctx.col_group_size - (c1 - c0)) * (r1 - r0))
     return HashNode(
         node_id=old_node.node_id,
         axis=old_node.axis,
@@ -235,6 +271,8 @@ def build_hash_nodes(
     hash_bits: int,
     tail_policy: TailPolicy = "include_partial",
     hash_type: str = "crc",
+    row_splits: int = 1,
+    col_splits: int = 1,
 ) -> list[HashNode]:
     n = meta.n
     if len(grid) != n or any(len(row) != n for row in grid):
@@ -242,57 +280,71 @@ def build_hash_nodes(
 
     nodes: list[HashNode] = []
 
+    row_col_width = math.ceil(n / row_splits)
     row_groups = _iter_groups(n, row_group_size, tail_policy)
     for group_idx, (r0, r1) in enumerate(row_groups):
-        bits: list[int] = []
-        source_indices: set[int] = set()
-        for r in range(r0, r1):
-            for c in range(n):
-                bits.append(grid[r][c])
-                src_idx = meta.grid_to_source[r * n + c]
-                if src_idx < meta.original_length:
-                    source_indices.add(src_idx)
+        for s in range(row_splits):
+            c_s0 = s * row_col_width
+            c_s1 = min(c_s0 + row_col_width, n)
+            flat_idx = group_idx * row_splits + s
+            node_id = f"row_{group_idx}" if row_splits == 1 else f"row_{group_idx}_s{s}"
 
-        if tail_policy == "pad_with_zeros" and (r1 - r0) < row_group_size:
-            bits.extend([0] * (row_group_size - (r1 - r0)) * n)
+            bits: list[int] = []
+            source_indices: set[int] = set()
+            for r in range(r0, r1):
+                for c in range(c_s0, c_s1):
+                    bits.append(grid[r][c])
+                    src_idx = meta.grid_to_source[r * n + c]
+                    if src_idx < meta.original_length:
+                        source_indices.add(src_idx)
 
-        digest = _compute_hash(bits, hash_bits, f"row_{group_idx}", hash_type)
-        nodes.append(
-            HashNode(
-                node_id=f"row_{group_idx}",
-                axis="row",
-                group_index=group_idx,
-                hash_bits=hash_bits,
-                digest=digest,
-                source_indices=frozenset(source_indices),
+            if tail_policy == "pad_with_zeros" and (r1 - r0) < row_group_size:
+                bits.extend([0] * (row_group_size - (r1 - r0)) * (c_s1 - c_s0))
+
+            digest = _compute_hash(bits, hash_bits, node_id, hash_type)
+            nodes.append(
+                HashNode(
+                    node_id=node_id,
+                    axis="row",
+                    group_index=flat_idx,
+                    hash_bits=hash_bits,
+                    digest=digest,
+                    source_indices=frozenset(source_indices),
+                )
             )
-        )
 
+    col_row_width = math.ceil(n / col_splits)
     col_groups = _iter_groups(n, col_group_size, tail_policy)
     for group_idx, (c0, c1) in enumerate(col_groups):
-        bits = []
-        source_indices = set()
-        for c in range(c0, c1):
-            for r in range(n):
-                bits.append(grid[r][c])
-                src_idx = meta.grid_to_source[r * n + c]
-                if src_idx < meta.original_length:
-                    source_indices.add(src_idx)
+        for s in range(col_splits):
+            r_s0 = s * col_row_width
+            r_s1 = min(r_s0 + col_row_width, n)
+            flat_idx = group_idx * col_splits + s
+            node_id = f"col_{group_idx}" if col_splits == 1 else f"col_{group_idx}_s{s}"
 
-        if tail_policy == "pad_with_zeros" and (c1 - c0) < col_group_size:
-            bits.extend([0] * (col_group_size - (c1 - c0)) * n)
+            bits = []
+            source_indices = set()
+            for c in range(c0, c1):
+                for r in range(r_s0, r_s1):
+                    bits.append(grid[r][c])
+                    src_idx = meta.grid_to_source[r * n + c]
+                    if src_idx < meta.original_length:
+                        source_indices.add(src_idx)
 
-        digest = _compute_hash(bits, hash_bits, f"col_{group_idx}", hash_type)
-        nodes.append(
-            HashNode(
-                node_id=f"col_{group_idx}",
-                axis="col",
-                group_index=group_idx,
-                hash_bits=hash_bits,
-                digest=digest,
-                source_indices=frozenset(source_indices),
+            if tail_policy == "pad_with_zeros" and (c1 - c0) < col_group_size:
+                bits.extend([0] * (col_group_size - (c1 - c0)) * (r_s1 - r_s0))
+
+            digest = _compute_hash(bits, hash_bits, node_id, hash_type)
+            nodes.append(
+                HashNode(
+                    node_id=node_id,
+                    axis="col",
+                    group_index=flat_idx,
+                    hash_bits=hash_bits,
+                    digest=digest,
+                    source_indices=frozenset(source_indices),
+                )
             )
-        )
 
     return nodes
 

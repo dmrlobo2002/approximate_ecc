@@ -34,6 +34,8 @@ def run_trial(
     max_combos: int | None = None,
     block_count: int = 0,
     hash_type: str = "crc",
+    row_splits: int = 1,
+    col_splits: int = 1,
 ) -> dict[str, Any]:
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=rounds)
     current_grid = [row[:] for row in baseline_grid]
@@ -62,6 +64,8 @@ def run_trial(
         max_combos=max_combos,
         globally_pinned=globally_pinned,
         hash_type=hash_type,
+        row_splits=row_splits,
+        col_splits=col_splits,
     )
 
     restored_bits = grid_to_bits(result.corrected_grid, meta, key=key)
@@ -79,8 +83,8 @@ def run_trial(
 
 
 def _trial_task(task: tuple) -> dict[str, Any]:
-    bits, key, rounds, flip_indices, rgs, cgs, hb, tp, mc, bc, ht = task
-    return run_trial(bits, key, rounds, flip_indices, rgs, cgs, hb, tp, mc, bc, ht)
+    bits, key, rounds, flip_indices, rgs, cgs, hb, tp, mc, bc, ht, rs, cs = task
+    return run_trial(bits, key, rounds, flip_indices, rgs, cgs, hb, tp, mc, bc, ht, rs, cs)
 
 
 def run_trials_parallel(tasks: list[tuple], n_workers: int = 0) -> list[dict[str, Any]]:
