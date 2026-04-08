@@ -33,6 +33,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--viz-dir", type=str, default="dag_viz", help="Output directory for DAG PNGs")
     parser.add_argument("--viz-prefix", type=str, default="dag", help="Prefix for generated DAG PNG filenames")
     parser.add_argument("--golden-bits", action="store_true", help="Use original (golden) bits for solver scoring; without this flag the solver uses only stored hashes")
+    parser.add_argument("--max-flips", type=int, default=2, help="Max flips tried per node (correct_without_golden path only)")
+    parser.add_argument("--max-combos", type=int, default=None, help="Global combo budget cap (correct_with_dag path only; None = unlimited)")
     return parser.parse_args()
 
 
@@ -94,6 +96,7 @@ def main() -> None:
             hash_bits=args.hash_bits,
             tail_policy=args.tail_policy,
             record_step_snapshots=args.viz,
+            max_combos=args.max_combos,
             hash_type=args.hash_type,
         )
     else:
@@ -106,6 +109,7 @@ def main() -> None:
             hash_bits=args.hash_bits,
             tail_policy=args.tail_policy,
             record_step_snapshots=args.viz,
+            max_flips=args.max_flips,
             hash_type=args.hash_type,
         )
     print(f"Mismatched before: {len(result.mismatched_before)}")
