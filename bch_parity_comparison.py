@@ -45,7 +45,20 @@ def bch_parity_galois(data_bits: int, t: int) -> dict | None:
     Finds the smallest primitive BCH code BCH(2^m - 1, k) with designed
     distance d = 2t+1 whose data capacity k >= data_bits, then reports
     the parity bits (= n - k) as overhead for data_bits data bits.
+
+    For data_bits > 256, BCH is modeled as x2 overhead (overhead_ratio = 1.0).
     """
+    if data_bits > 256:
+        return {
+            "t": t,
+            "data_bits": data_bits,
+            "n": data_bits * 2,
+            "k": data_bits,
+            "parity_bits": data_bits,
+            "overhead_ratio": 1.0,
+            "overhead_pct": 100.0,
+        }
+
     import galois
 
     min_m = max(3, math.ceil(math.log2(data_bits + 1)))

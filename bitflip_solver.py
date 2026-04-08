@@ -142,37 +142,21 @@ def correct_without_golden(
     hash_bits: int,
     tail_policy: TailPolicy = "include_partial",
     record_step_snapshots: bool = False,
-    max_flips: int = 2,
+    max_flips: int = 8,
     hash_type: str = "crc",
 ) -> SolveResult:
     """Solver that requires only stored hash digests, not the original (golden) bits.
 
-    Iterates nodes smallest-first; for each mismatched node tries every combination
-    of 1..max_flips bit flips within that node's source indices and commits the first
-    combo that restores the node's hash digest.  Because rows and columns overlap,
-    an early fix cascades: a corrected row bit may partially fix a column node,
-    making it solvable when we reach it.
+    Iteratively climbs flip levels 1..max_flips.  At each level, makes repeated
+    passes over all mismatched nodes until no further progress, then advances to
+    the next level.  Fixing a node cascades: shared bits between row and column
+    nodes mean a fix in one reduces the effective flip count in its neighbors,
+    often making them solvable at a lower level on the next pass.
+
+    Within each pass, nodes are sorted by the number of currently-mismatched
+    neighbors (fewest first) as a proxy for ease — a node whose neighbors are
+    mostly already fixed has more of its bits pinned, making it a simpler target.
     """
-    if _HAS_CPP:
-        raw = _cpp_correct_without_golden(
-            baseline_nodes, current_grid, meta,
-            row_group_size, col_group_size, hash_bits,
-            tail_policy, record_step_snapshots, max_flips, hash_type,
-        )
-        return SolveResult(
-            corrected_grid=raw["corrected_grid"],
-            mismatched_before=raw["mismatched_before"],
-            mismatched_after=raw["mismatched_after"],
-            steps=raw["steps"],
-            step_snapshots=list(raw["step_snapshots"]),
-            total_combos_evaluated=raw["total_combos_evaluated"],
-            total_nodes_visited=raw["total_nodes_visited"],
-            max_flip_level_reached=raw["max_flip_level_reached"],
-            nodes_with_no_correction=raw["nodes_with_no_correction"],
-            solve_time_seconds=raw["solve_time_seconds"],
-            grid_hd_before=raw["grid_hd_before"],
-            grid_hd_after=raw["grid_hd_after"],
-        )
     current_nodes = build_hash_nodes(
         grid=current_grid,
         meta=meta,
@@ -195,71 +179,91 @@ def correct_without_golden(
     working_grid = _copy_grid(current_grid)
     live_matched = sum(1 for nid, n in live_nodes.items() if baseline_map[nid].digest == n.digest)
 
-    ordered_nodes = sorted(live_nodes.values(), key=lambda n: (n.covered_bits, n.node_id))
-
     total_combos_evaluated = 0
     total_nodes_visited = 0
     max_flip_level_reached = 0
     nodes_with_no_correction = 0
 
+    def _mismatched_neighbor_count(node: HashNode) -> int:
+        """Proxy for difficulty: how many intersecting nodes are still mismatched."""
+        neighbors: set[str] = set()
+        for src_idx in node.source_indices:
+            for nid in ctx.src_to_node_ids[src_idx]:
+                if nid != node.node_id:
+                    neighbors.add(nid)
+        return sum(1 for nid in neighbors if live_nodes[nid].digest != baseline_map[nid].digest)
+
     _timer = Timer()
     _timer.__enter__()
 
-    while True:
-        any_fixed = False
-        for node in ordered_nodes:
-            if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
-                continue
+    all_done = False
+    for current_max_flips in range(1, max_flips + 1):
+        # Exhaust everything fixable at this flip depth before moving on.
+        while True:
+            # Re-sort each pass: fewest mismatched neighbors first (easiest targets).
+            all_node_list = list(live_nodes.values())
+            ordered_nodes = sorted(
+                all_node_list,
+                key=lambda n: (_mismatched_neighbor_count(n), n.covered_bits, n.node_id),
+            )
 
-            total_nodes_visited += 1
-            src_indices = sorted(node.source_indices)
-            committed = False
+            any_fixed = False
+            for node in ordered_nodes:
+                if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
+                    continue
 
-            for flips in range(1, max_flips + 1):
-                if committed:
-                    break
-                for combo in combinations(src_indices, flips):
-                    total_combos_evaluated += 1
-                    affected_ids: set[str] = set()
-                    for src_idx in combo:
-                        for nid in ctx.src_to_node_ids[src_idx]:
-                            affected_ids.add(nid)
-                    saved = {nid: live_nodes[nid] for nid in affected_ids}
-                    for src_idx in combo:
-                        r, c = source_index_to_grid_coord(src_idx, ctx.meta)
-                        working_grid[r][c] ^= 1
-                    for nid in affected_ids:
-                        live_nodes[nid] = recompute_node(live_nodes[nid], working_grid, ctx)
+                total_nodes_visited += 1
+                src_indices = sorted(node.source_indices)
+                committed = False
 
-                    if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
-                        live_matched += sum(
-                            int(live_nodes[nid].digest == baseline_map[nid].digest)
-                            - int(saved[nid].digest == baseline_map[nid].digest)
-                            for nid in affected_ids
-                        )
-                        if flips > max_flip_level_reached:
-                            max_flip_level_reached = flips
-                        steps.append(f"Corrected {node.node_id} using {flips} flips.")
-                        if record_step_snapshots:
-                            step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
-                            step_snapshots.append((node.node_id, step_mismatched))
-                        committed = True
-                        any_fixed = True
+                for flips in range(1, current_max_flips + 1):
+                    if committed:
                         break
-                    else:
-                        for nid, old_node in saved.items():
-                            live_nodes[nid] = old_node
+                    for combo in combinations(src_indices, flips):
+                        total_combos_evaluated += 1
+                        affected_ids: set[str] = set()
+                        for src_idx in combo:
+                            for nid in ctx.src_to_node_ids[src_idx]:
+                                affected_ids.add(nid)
+                        saved = {nid: live_nodes[nid] for nid in affected_ids}
                         for src_idx in combo:
                             r, c = source_index_to_grid_coord(src_idx, ctx.meta)
                             working_grid[r][c] ^= 1
+                        for nid in affected_ids:
+                            live_nodes[nid] = recompute_node(live_nodes[nid], working_grid, ctx)
 
-            if not committed:
-                nodes_with_no_correction += 1
-            elif live_matched == len(baseline_map):
-                any_fixed = True  # trigger clean exit
-                break
+                        if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
+                            live_matched += sum(
+                                int(live_nodes[nid].digest == baseline_map[nid].digest)
+                                - int(saved[nid].digest == baseline_map[nid].digest)
+                                for nid in affected_ids
+                            )
+                            if flips > max_flip_level_reached:
+                                max_flip_level_reached = flips
+                            steps.append(f"[lvl={current_max_flips}] Corrected {node.node_id} with {flips} flip(s).")
+                            if record_step_snapshots:
+                                step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
+                                step_snapshots.append((node.node_id, step_mismatched))
+                            committed = True
+                            any_fixed = True
+                            break
+                        else:
+                            for nid, old_node in saved.items():
+                                live_nodes[nid] = old_node
+                            for src_idx in combo:
+                                r, c = source_index_to_grid_coord(src_idx, ctx.meta)
+                                working_grid[r][c] ^= 1
 
-        if not any_fixed or live_matched == len(baseline_map):
+                if not committed:
+                    nodes_with_no_correction += 1
+                elif live_matched == len(baseline_map):
+                    all_done = True
+                    break
+
+            if all_done or not any_fixed:
+                break  # no progress at this level — advance to next flip depth
+
+        if all_done:
             break
 
     _timer.__exit__(None, None, None)

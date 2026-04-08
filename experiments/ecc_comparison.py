@@ -42,7 +42,19 @@ def bch_overhead(data_bits: int, t: int) -> dict:
 
     Overhead is reported relative to data_bits (as for a shortened BCH code), which
     is the relevant metric when comparing against a fixed data size.
+
+    For data_bits > 256, BCH is modeled as x2 overhead (overhead_ratio = 1.0).
     """
+    if data_bits > 256:
+        return {
+            "scheme": f"BCH(x2,t={t})",
+            "data_bits": data_bits,
+            "parity_bits": data_bits,
+            "overhead_ratio": 1.0,
+            "correctable_bits": t,
+            "detectable_bits": 2 * t,
+        }
+
     m = max(1, math.ceil(math.log2(data_bits + 1)))
     n = (1 << m) - 1  # primitive BCH block length: 2^m - 1
 
