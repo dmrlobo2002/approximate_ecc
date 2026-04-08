@@ -293,8 +293,11 @@ def correct_with_dag(
     max_combos: int | None = None,
     globally_pinned: frozenset = frozenset(),
     hash_type: str = "crc",
+    max_flips_ceiling: int | None = None,
 ) -> SolveResult:
-    if _HAS_CPP:
+    # Use C++ fast path only when the new iterative algorithm is not requested.
+    # Passing max_flips_ceiling opts into the Python iterative solver.
+    if _HAS_CPP and max_flips_ceiling is None:
         raw = _cpp_correct_with_dag(
             baseline_grid, current_grid, meta,
             row_group_size, col_group_size, hash_bits,
@@ -370,80 +373,120 @@ def correct_with_dag(
 
     _timer = Timer()
     _timer.__enter__()
-    for node in ordered_nodes:
-        if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
-            continue
 
-        total_nodes_visited += 1
-        src_indices = sorted(node.source_indices)
-
-        # Single pass over neighbors: collect bits from matched neighbors (pinned)
-        # and bits from mismatched neighbors (intersection candidates).
-        good_neighbor_bits: set[int] = set()
-        mismatched_neighbor_bits: set[int] = set()
-        for edge in dag.adj[node.node_id]:
-            neighbor_id = edge.dst if edge.src == node.node_id else edge.src
-            neighbor_bits = dag.nodes[neighbor_id].source_indices
-            if live_nodes[neighbor_id].digest == baseline_map[neighbor_id].digest:
-                good_neighbor_bits |= neighbor_bits
+    _ceiling = max_flips_ceiling if max_flips_ceiling is not None else 8
+    # Iterative flip-level climbing:
+    # At level k, exhaust every node fixable with <= k flips (making multiple passes
+    # until no more progress), then advance to k+1.  Fixing a node at level k reduces
+    # the effective flip count in its intersecting neighbors, so previously-stuck nodes
+    # often become solvable at a lower level on the next pass.
+    all_done = False
+    for current_max_flips in range(1, _ceiling + 1):
+        while True:
+            # Re-score and re-sort at the start of every pass so nodes with the
+            # fewest remaining flips (easiest targets) are always attempted first.
+            if hash_type == "simhash":
+                scores = {
+                    nid: hamming_distance(baseline_map[nid].digest, live_nodes[nid].digest)
+                    for nid in baseline_map
+                }
             else:
-                mismatched_neighbor_bits |= neighbor_bits
-        free_indices = sorted(node.source_indices - good_neighbor_bits - globally_pinned)
-        intersection_indices = sorted(node.source_indices & mismatched_neighbor_bits & set(free_indices))
+                scores = {
+                    node.node_id: _count_node_flips(node, baseline_grid, working_grid, ctx)
+                    for node in dag.nodes.values()
+                }
+            ordered_nodes = sorted(
+                dag.nodes.values(),
+                key=lambda n: (scores[n.node_id], n.covered_bits, n.node_id),
+            )
 
-        best_combo: tuple[int, ...] | None = None
-        best_match = -1
-        best_flip_count = None
+            any_fixed = False
+            budget_exhausted = False
 
-        search_passes: list[list[int]] = []
-        if intersection_indices and intersection_indices != free_indices:
-            search_passes.append(intersection_indices)
-        search_passes.append(free_indices)
-        if free_indices != src_indices:
-            search_passes.append(src_indices)
+            for node in ordered_nodes:
+                if live_nodes[node.node_id].digest == baseline_map[node.node_id].digest:
+                    continue
 
-        budget_exhausted = False
-        for candidate_indices in search_passes:
-            for flips in range(len(candidate_indices) + 1):
-                found_for_level = False
-                for combo in combinations(candidate_indices, flips):
-                    total_combos_evaluated += 1
-                    if max_combos is not None and total_combos_evaluated > max_combos:
-                        budget_exhausted = True
+                total_nodes_visited += 1
+                src_indices = sorted(node.source_indices)
+
+                # Neighbor pruning: bits covered by matched neighbors are pinned (untouchable);
+                # bits shared with mismatched neighbors are the most likely flip sites.
+                good_neighbor_bits: set[int] = set()
+                mismatched_neighbor_bits: set[int] = set()
+                for edge in dag.adj[node.node_id]:
+                    neighbor_id = edge.dst if edge.src == node.node_id else edge.src
+                    neighbor_bits = dag.nodes[neighbor_id].source_indices
+                    if live_nodes[neighbor_id].digest == baseline_map[neighbor_id].digest:
+                        good_neighbor_bits |= neighbor_bits
+                    else:
+                        mismatched_neighbor_bits |= neighbor_bits
+                free_indices = sorted(node.source_indices - good_neighbor_bits - globally_pinned)
+                intersection_indices = sorted(node.source_indices & mismatched_neighbor_bits & set(free_indices))
+
+                best_combo: tuple[int, ...] | None = None
+                best_match = -1
+                best_flip_count = None
+
+                search_passes: list[list[int]] = []
+                if intersection_indices and intersection_indices != free_indices:
+                    search_passes.append(intersection_indices)
+                search_passes.append(free_indices)
+                if free_indices != src_indices:
+                    search_passes.append(src_indices)
+
+                for candidate_indices in search_passes:
+                    for flips in range(min(current_max_flips, len(candidate_indices)) + 1):
+                        found_for_level = False
+                        for combo in combinations(candidate_indices, flips):
+                            total_combos_evaluated += 1
+                            if max_combos is not None and total_combos_evaluated > max_combos:
+                                budget_exhausted = True
+                                break
+                            score, fixed = _apply_combo_and_score(
+                                combo, node.node_id, working_grid, live_nodes, live_matched, baseline_map, ctx
+                            )
+                            if not fixed:
+                                continue
+                            found_for_level = True
+                            if score > best_match:
+                                best_match = score
+                                best_combo = combo
+                                best_flip_count = flips
+                            elif score == best_match and best_flip_count is not None and flips < best_flip_count:
+                                best_combo = combo
+                                best_flip_count = flips
+                        if budget_exhausted:
+                            break
+                        if found_for_level:
+                            if flips > max_flip_level_reached:
+                                max_flip_level_reached = flips
+                            break
+                    if budget_exhausted or best_combo is not None:
                         break
-                    score, fixed = _apply_combo_and_score(
-                        combo, node.node_id, working_grid, live_nodes, live_matched, baseline_map, ctx
-                    )
-                    if not fixed:
-                        continue
-                    found_for_level = True
-                    if score > best_match:
-                        best_match = score
-                        best_combo = combo
-                        best_flip_count = flips
-                    elif score == best_match and best_flip_count is not None and flips < best_flip_count:
-                        best_combo = combo
-                        best_flip_count = flips
-                if budget_exhausted:
-                    break
-                if found_for_level:
-                    if flips > max_flip_level_reached:
-                        max_flip_level_reached = flips
-                    break
-            if budget_exhausted or best_combo is not None:
-                break
 
-        if best_combo is not None:
-            live_matched = _commit_combo(best_combo, working_grid, live_nodes, live_matched, baseline_map, ctx)
-            steps.append(f"Corrected {node.node_id} using {best_flip_count} flips.")
-            if live_matched == len(baseline_map):
-                break
-            if record_step_snapshots:
-                step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
-                step_snapshots.append((node.node_id, step_mismatched))
-        else:
-            nodes_with_no_correction += 1
-            steps.append(f"No correction found for {node.node_id} after full enumeration.")
+                if best_combo is not None:
+                    live_matched = _commit_combo(best_combo, working_grid, live_nodes, live_matched, baseline_map, ctx)
+                    steps.append(f"[lvl={current_max_flips}] Corrected {node.node_id} with {best_flip_count} flip(s).")
+                    any_fixed = True
+                    if record_step_snapshots:
+                        step_mismatched = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
+                        step_snapshots.append((node.node_id, step_mismatched))
+                    if live_matched == len(baseline_map):
+                        all_done = True
+                        break
+                else:
+                    nodes_with_no_correction += 1
+
+                if budget_exhausted:
+                    all_done = True
+                    break
+
+            if all_done or not any_fixed:
+                break  # no progress at this level — advance to next flip depth
+
+        if all_done:
+            break
 
     mismatched_after = {nid for nid, n in live_nodes.items() if n.digest != baseline_map[nid].digest}
     _timer.__exit__(None, None, None)

@@ -35,6 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--golden-bits", action="store_true", help="Use original (golden) bits for solver scoring; without this flag the solver uses only stored hashes")
     parser.add_argument("--max-flips", type=int, default=2, help="Max flips tried per node (correct_without_golden path only)")
     parser.add_argument("--max-combos", type=int, default=None, help="Global combo budget cap (correct_with_dag path only; None = unlimited)")
+    parser.add_argument("--max-flips-ceiling", type=int, default=8, help="Max flip depth the iterative solver climbs to (correct_with_dag/--golden-bits path only; triggers Python solver)")
     return parser.parse_args()
 
 
@@ -98,6 +99,7 @@ def main() -> None:
             record_step_snapshots=args.viz,
             max_combos=args.max_combos,
             hash_type=args.hash_type,
+            max_flips_ceiling=args.max_flips_ceiling,
         )
     else:
         result = correct_without_golden(
