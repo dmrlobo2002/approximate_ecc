@@ -31,7 +31,7 @@ from experiments.common import (
 from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
-MAX_BITS_PER_NODE = 48  # skip strategy+block_size combos where solver is intractable
+MAX_BITS_PER_NODE = 64  # skip strategy+block_size combos where solver is intractable
 DEFAULT_MAX_COMBOS = 500_000  # per-trial combo budget; prevents hanging on hard instances
 
 # Hash sweep (Panel C) — default strategy only, smaller block sizes
@@ -40,10 +40,15 @@ DEFAULT_HASH_SWEEP_LENGTHS = [128, 256, 512, 1024]
 HASH_SWEEP_COLORS = {8: "#e41a1c", 16: "#377eb8", 32: "#4daf4a"}
 
 
-def _bits_per_node(bit_length: int, row_group_size: int, col_group_size: int) -> int:
-    """Largest node size (in source bits) for a given strategy and block size."""
+def _bits_per_node(bit_length: int, row_group_size: int, col_group_size: int,
+                   row_splits: int = 1, col_splits: int = 1) -> int:
+    """Largest node size (in source bits) for a given strategy and block size.
+    Splits divide each group's column/row coverage, reducing bits per node.
+    """
     n = math.ceil(math.sqrt(bit_length))
-    return max(row_group_size * n, col_group_size * n)
+    bits_per_row_node = math.ceil(n * row_group_size / row_splits)
+    bits_per_col_node = math.ceil(n * col_group_size / col_splits)
+    return max(bits_per_row_node, bits_per_col_node)
 DEFAULT_KEYS = 20
 DEFAULT_ROUNDS = 8
 HASH_BITS = 32
@@ -141,9 +146,10 @@ def main() -> None:
 
     for s in STRATEGIES:
         for L in bit_lengths:
-            if _bits_per_node(L, s["row_group_size"], s["col_group_size"]) > MAX_BITS_PER_NODE:
+            node_bits = _bits_per_node(L, s["row_group_size"], s["col_group_size"], s["row_splits"], s["col_splits"])
+            if node_bits > MAX_BITS_PER_NODE:
                 skipped_cells.add((s["label"], L))
-                print(f"  Skipping {s['label']} at L={L} — node too large ({_bits_per_node(L, s['row_group_size'], s['col_group_size'])} bits/node > {MAX_BITS_PER_NODE})")
+                print(f"  Skipping {s['label']} at L={L} — node too large ({node_bits} bits/node > {MAX_BITS_PER_NODE})")
                 continue
             for flip_count in flip_sweep_counts(L):
                 for key_id in range(args.keys):
