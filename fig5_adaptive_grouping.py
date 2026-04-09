@@ -6,6 +6,10 @@ Panel A: Analytical overhead ratio vs block size for 5 strategies:
 Panel B: Empirical max correctable errors at ≥95% success vs block size.
          Shows that grouping reduces overhead at the cost of correction capability,
          while splitting increases capability at the cost of overhead.
+
+Panel C: Hash size sweep — max correctable flips vs block size for CRC-8/16/32
+         using the default strategy (group_size=1, splits=1) on smaller block sizes.
+         Shows that CRC-8 achieves similar correction to CRC-32 at 4× less overhead.
 """
 from __future__ import annotations
 
@@ -29,6 +33,11 @@ from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
 MAX_BITS_PER_NODE = 48  # skip strategy+block_size combos where solver is intractable
 DEFAULT_MAX_COMBOS = 500_000  # per-trial combo budget; prevents hanging on hard instances
+
+# Hash sweep (Panel C) — default strategy only, smaller block sizes
+HASH_SWEEP_BITS = [8, 16, 32]
+DEFAULT_HASH_SWEEP_LENGTHS = [128, 256, 512, 1024]
+HASH_SWEEP_COLORS = {8: "#e41a1c", 16: "#377eb8", 32: "#4daf4a"}
 
 
 def _bits_per_node(bit_length: int, row_group_size: int, col_group_size: int) -> int:
@@ -79,6 +88,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--max-combos", type=int, default=DEFAULT_MAX_COMBOS,
                    help="Per-trial combo budget (0 = unlimited, not recommended)")
+    p.add_argument("--hash-sweep-lengths", type=str,
+                   default=",".join(str(x) for x in DEFAULT_HASH_SWEEP_LENGTHS),
+                   help="Block sizes for hash-width sweep (Panel C)")
     return p.parse_args()
 
 
@@ -90,6 +102,7 @@ def main() -> None:
     hash_bits = args.hash_bits
     ensure_dir(args.out_dir)
     max_combos = args.max_combos if args.max_combos > 0 else None
+    hash_sweep_lengths = parse_int_list(args.hash_sweep_lengths)
     write_json(os.path.join(args.out_dir, "config.json"), {
         "bit_lengths": bit_lengths,
         "hash_bits": hash_bits,
@@ -98,6 +111,8 @@ def main() -> None:
         "strategies": [s["label"] for s in STRATEGIES],
         "success_threshold": SUCCESS_THRESHOLD,
         "max_combos": max_combos,
+        "hash_sweep_bits": HASH_SWEEP_BITS,
+        "hash_sweep_lengths": hash_sweep_lengths,
     })
 
     # --- Panel A: analytical overhead ---
@@ -117,7 +132,8 @@ def main() -> None:
     write_csv(os.path.join(args.out_dir, "fig5_overhead.csv"), overhead_rows, overhead_fieldnames)
 
     # --- Panel B: empirical max-correctable flips at ≥95% success ---
-    bits_by_length = {L: [(i * 3 + 1) % 2 for i in range(L)] for L in bit_lengths}
+    all_lengths_needed = sorted(set(bit_lengths) | set(hash_sweep_lengths))
+    bits_by_length = {L: [(i * 3 + 1) % 2 for i in range(L)] for L in all_lengths_needed}
 
     all_tasks: list[tuple] = []
     all_metas: list[tuple] = []  # (strategy_label, L, flip_count, key_id)
@@ -189,6 +205,61 @@ def main() -> None:
             max_correctable[(s["label"], L)] = best
             print(f"  {s['label']:8s}  L={L:6d}  overhead={overhead:.1%}  max_flips_at_{int(SUCCESS_THRESHOLD*100)}pct={best}")
 
+    # --- Panel C: hash size sweep (default strategy, smaller block sizes) ---
+    hash_sweep_tasks: list[tuple] = []
+    hash_sweep_metas: list[tuple] = []  # (hb, L, flip_count, key_id)
+
+    for hb in HASH_SWEEP_BITS:
+        for L in hash_sweep_lengths:
+            for flip_count in flip_sweep_counts(L):
+                for key_id in range(args.keys):
+                    key = stable_key(args.seed, key_id)
+                    rng = stable_rng(args.seed, key_id, flip_count, hb, L, "hash_sweep")
+                    flip_indices = get_flip_indices(flip_count, L, "random", rng)
+                    hash_sweep_tasks.append((
+                        bits_by_length[L], key, args.rounds, flip_indices,
+                        1, 1, hb, "include_partial", max_combos, 0, "crc", 1, 1,
+                    ))
+                    hash_sweep_metas.append((hb, L, flip_count, key_id))
+
+    print(f"Running {len(hash_sweep_tasks)} hash-sweep trials ({len(HASH_SWEEP_BITS)} hash widths × {len(hash_sweep_lengths)} block sizes)...")
+    if args.parallel:
+        hash_sweep_results = run_trials_parallel(hash_sweep_tasks, args.workers)
+    else:
+        hash_sweep_results = run_trials_serial(hash_sweep_tasks)
+
+    hash_sweep_rows: list[dict[str, Any]] = []
+    for trial, (hb, L, flip_count, key_id) in zip(hash_sweep_results, hash_sweep_metas):
+        hash_sweep_rows.append({
+            "hash_bits": hb,
+            "bit_length": L,
+            "flip_count": flip_count,
+            "key_id": key_id,
+            "fully_corrected": int(trial["fully_corrected"]),
+            "solve_time_ms": trial["solve_time_ms"],
+        })
+
+    write_csv(os.path.join(args.out_dir, "fig5_hash_sweep.csv"), hash_sweep_rows,
+              ["hash_bits", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
+
+    hash_max_correctable: dict[tuple[int, int], int] = {}
+    for hb in HASH_SWEEP_BITS:
+        for L in hash_sweep_lengths:
+            best = 0
+            for flip_count in flip_sweep_counts(L):
+                subset = [
+                    r for r in hash_sweep_rows
+                    if r["hash_bits"] == hb and r["bit_length"] == L and r["flip_count"] == flip_count
+                ]
+                if not subset:
+                    continue
+                rate = sum(r["fully_corrected"] for r in subset) / len(subset)
+                if rate >= SUCCESS_THRESHOLD:
+                    best = flip_count
+            hash_max_correctable[(hb, L)] = best
+            overhead = compute_overhead_ratio(L, 1, 1, hb)
+            print(f"  CRC-{hb:2d}  L={L:6d}  overhead={overhead:.1%}  max_flips_at_{int(SUCCESS_THRESHOLD*100)}pct={best}")
+
     if args.no_plot:
         return
 
@@ -198,9 +269,9 @@ def main() -> None:
     except ModuleNotFoundError as e:
         raise RuntimeError("matplotlib required; install it or use --no-plot") from e
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))
     fig.suptitle(
-        f"Adaptive Grouping: Approximate ECC ({hash_bits}-bit CRC)",
+        f"Adaptive Grouping: Approximate ECC (Panels A–B: {hash_bits}-bit CRC; Panel C: hash sweep)",
         fontsize=13, fontweight="bold",
     )
 
@@ -242,6 +313,24 @@ def main() -> None:
     ax2.grid(True, alpha=0.3)
     ax2.legend(fontsize=9)
     ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
+
+    # Panel C: hash size sweep — max correctable flips vs block size, one line per CRC width
+    for hb in HASH_SWEEP_BITS:
+        xs = sorted(hash_sweep_lengths)
+        ys = [hash_max_correctable.get((hb, L), 0) for L in xs]
+        overhead_pcts = [compute_overhead_ratio(L, 1, 1, hb) * 100 for L in xs]
+        color = HASH_SWEEP_COLORS[hb]
+        label = f"CRC-{hb} (~{overhead_pcts[len(xs)//2]:.0f}% OH at {xs[len(xs)//2]:,}b)"
+        ax3.plot(xs, ys, linestyle="-", marker="o", markersize=5,
+                 color=color, linewidth=2, label=label)
+
+    ax3.set_xscale("log", base=2)
+    ax3.set_xlabel("Block size (bits)")
+    ax3.set_ylabel(f"Max correctable flips (≥{int(SUCCESS_THRESHOLD*100)}% success)")
+    ax3.set_title(f"Hash width sweep (default strategy)\n(≥{int(SUCCESS_THRESHOLD*100)}% success threshold)")
+    ax3.grid(True, alpha=0.3)
+    ax3.legend(fontsize=9)
+    ax3.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
 
     plt.tight_layout()
     out_path = os.path.join(args.out_dir, "fig5_adaptive_grouping.png")
