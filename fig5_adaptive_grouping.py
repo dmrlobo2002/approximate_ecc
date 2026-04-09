@@ -27,7 +27,8 @@ from experiments.common import (
 from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
-MAX_BITS_PER_NODE = 64  # skip strategy+block_size combos where solver is intractable
+MAX_BITS_PER_NODE = 48  # skip strategy+block_size combos where solver is intractable
+DEFAULT_MAX_COMBOS = 500_000  # per-trial combo budget; prevents hanging on hard instances
 
 
 def _bits_per_node(bit_length: int, row_group_size: int, col_group_size: int) -> int:
@@ -76,6 +77,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-plot", action="store_true")
     p.add_argument("--parallel", action="store_true")
     p.add_argument("--workers", type=int, default=0)
+    p.add_argument("--max-combos", type=int, default=DEFAULT_MAX_COMBOS,
+                   help="Per-trial combo budget (0 = unlimited, not recommended)")
     return p.parse_args()
 
 
@@ -86,6 +89,7 @@ def main() -> None:
         raise ValueError("--bit-lengths must be non-empty")
     hash_bits = args.hash_bits
     ensure_dir(args.out_dir)
+    max_combos = args.max_combos if args.max_combos > 0 else None
     write_json(os.path.join(args.out_dir, "config.json"), {
         "bit_lengths": bit_lengths,
         "hash_bits": hash_bits,
@@ -93,6 +97,7 @@ def main() -> None:
         "rounds": args.rounds,
         "strategies": [s["label"] for s in STRATEGIES],
         "success_threshold": SUCCESS_THRESHOLD,
+        "max_combos": max_combos,
     })
 
     # --- Panel A: analytical overhead ---
@@ -132,7 +137,7 @@ def main() -> None:
                     all_tasks.append((
                         bits_by_length[L], key, args.rounds, flip_indices,
                         s["row_group_size"], s["col_group_size"],
-                        hash_bits, "include_partial", None, 0, "crc",
+                        hash_bits, "include_partial", max_combos, 0, "crc",
                         s["row_splits"], s["col_splits"],
                     ))
                     all_metas.append((s["label"], L, flip_count, key_id))
