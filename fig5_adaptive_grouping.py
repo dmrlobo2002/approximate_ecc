@@ -29,7 +29,7 @@ from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
 DEFAULT_KEYS = 20
 DEFAULT_ROUNDS = 8
-HASH_BITS = 16
+HASH_BITS = 32
 SUCCESS_THRESHOLD = 0.95
 
 STRATEGIES = [

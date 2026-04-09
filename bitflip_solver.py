@@ -15,8 +15,10 @@ try:
     from _ecc_cpp import correct_with_dag as _cpp_correct_with_dag
     from _ecc_cpp import correct_without_golden as _cpp_correct_without_golden
     _HAS_CPP = True
+    print("Found C++ files...")
 except ImportError:
     _HAS_CPP = False
+    print("[WARNING] No C++ files found...")
 
 
 @dataclass
