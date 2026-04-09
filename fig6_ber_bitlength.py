@@ -17,6 +17,7 @@ import numpy as np
 from experiments.common import (
     Agg,
     agg,
+    compute_overhead_ratio,
     ensure_dir,
     stable_key,
     stable_rng,
@@ -220,10 +221,13 @@ def main() -> None:
         ax_b.errorbar(xs, ys, yerr=errs, marker="s", markersize=5,
                       linewidth=2, color=color, label=f"BER {ber:.0%}", capsize=3)
 
+    # Overhead is a function of bit-length only (group_size=1, splits=1)
+    overhead_pct = {L: compute_overhead_ratio(L, 1, 1, hash_bits) * 100 for L in bit_lengths}
+
     ax_b.set_xscale("log", base=2)
     ax_b.set_xlabel("Block size (bits)")
     ax_b.set_ylabel("Success rate (%)")
-    ax_b.set_title("Success rate vs block size\n(one line per BER)")
+    ax_b.set_title("Success rate vs block size\n(one line per BER, right axis = overhead)")
     ax_b.set_ylim(-5, 105)
     ax_b.grid(True, alpha=0.3)
     ax_b.legend(fontsize=8)
@@ -231,21 +235,31 @@ def main() -> None:
     ax_b.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
     ax_b.set_xticks(bit_lengths)
 
+    # Secondary axis: overhead % at each block size
+    ax_b2 = ax_b.twinx()
+    oh_xs = sorted(bit_lengths)
+    oh_ys = [overhead_pct[L] for L in oh_xs]
+    ax_b2.plot(oh_xs, oh_ys, color="gray", linestyle=":", linewidth=1.5,
+               marker="^", markersize=4, label="Overhead %")
+    ax_b2.set_ylabel("Overhead (%)", color="gray")
+    ax_b2.tick_params(axis="y", labelcolor="gray")
+    ax_b2.yaxis.set_major_formatter(ticker.PercentFormatter())
+    ax_b2.legend(fontsize=8, loc="upper right")
+
     # --- Build 2D grid arrays for 3D panels ---
-    ber_arr = np.array([b * 100 for b in ber_values])   # x: BER %
-    len_arr = np.array(bit_lengths, dtype=float)         # y: bit-length
+    ber_arr = np.array([b * 100 for b in ber_values])        # x: BER %
+    len_arr = np.array(bit_lengths, dtype=float)              # y: bit-length
+    overhead_arr = np.array([overhead_pct[L] for L in bit_lengths])  # y alt: overhead %
+
     BER_grid, LEN_grid = np.meshgrid(ber_arr, len_arr)
+    BER_grid_oh, OH_grid = np.meshgrid(ber_arr, overhead_arr)
 
     success_grid = np.array([
         [cell_stats[(L, b)][0].mean * 100 for b in ber_values]
         for L in bit_lengths
     ])
-    time_grid = np.array([
-        [cell_stats[(L, b)][1].mean for b in ber_values]
-        for L in bit_lengths
-    ])
 
-    # --- Panel C: 3D surface — success rate ---
+    # --- Panel C: 3D surface — success rate vs (BER, bit-length) ---
     ax_c = fig.add_subplot(2, 2, 3, projection="3d")
     surf_c = ax_c.plot_surface(BER_grid, LEN_grid, success_grid,
                                cmap="viridis", edgecolor="none", alpha=0.9)
@@ -257,16 +271,18 @@ def main() -> None:
     ax_c.view_init(elev=30, azim=225)
     ax_c.set_zlim(0, 100)
 
-    # --- Panel D: 3D surface — mean solve time ---
+    # --- Panel D: 3D surface — success rate vs (BER, overhead %) ---
+    # Answers: "given my overhead budget and expected BER, what correction rate do I get?"
     ax_d = fig.add_subplot(2, 2, 4, projection="3d")
-    surf_d = ax_d.plot_surface(BER_grid, LEN_grid, time_grid,
-                               cmap="plasma", edgecolor="none", alpha=0.9)
-    fig.colorbar(surf_d, ax=ax_d, shrink=0.5, pad=0.1, label="Solve time (ms)")
+    surf_d = ax_d.plot_surface(BER_grid_oh, OH_grid, success_grid,
+                               cmap="coolwarm", edgecolor="none", alpha=0.9)
+    fig.colorbar(surf_d, ax=ax_d, shrink=0.5, pad=0.1, label="Success rate (%)")
     ax_d.set_xlabel("BER (%)")
-    ax_d.set_ylabel("Block size (bits)")
-    ax_d.set_zlabel("Solve time (ms)")
-    ax_d.set_title("Mean solve time surface\n(BER × Block size)")
+    ax_d.set_ylabel("Overhead (%)")
+    ax_d.set_zlabel("Success rate (%)")
+    ax_d.set_title("Success rate surface\n(BER × Overhead)")
     ax_d.view_init(elev=30, azim=225)
+    ax_d.set_zlim(0, 100)
 
     plt.tight_layout()
     out_path = os.path.join(args.out_dir, "fig6_ber_bitlength.png")
