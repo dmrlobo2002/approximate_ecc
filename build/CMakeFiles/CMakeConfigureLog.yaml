@@ -43,8 +43,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -62,7 +64,7 @@ events:
       - "venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeDetermineSystem.cmake:212 (message)"
       - "CMakeLists.txt:2 (project)"
     message: |
-      The system is: Linux - 6.17.0-19-generic - x86_64
+      The system is: Linux - 6.17.0-20-generic - x86_64
   -
     kind: "find-v1"
     backtrace:
@@ -107,8 +109,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -172,8 +176,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -213,8 +219,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -284,8 +292,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -333,8 +343,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -382,8 +394,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -431,8 +445,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -480,8 +496,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -529,8 +547,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -578,8 +598,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -627,8 +649,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -689,8 +713,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -738,8 +764,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -800,8 +828,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -865,8 +895,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -930,8 +962,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -952,8 +986,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc"
-      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc"
+      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI"
+      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -964,13 +998,13 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc'
+        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI'
         
-        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_546c1/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_546c1.dir/build.make CMakeFiles/cmTC_546c1.dir/build
-        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc'
-        Building CXX object CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o
-        /usr/bin/c++   -v -o CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_9c7d2/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_9c7d2.dir/build.make CMakeFiles/cmTC_9c7d2.dir/build
+        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI'
+        Building CXX object CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/bin/c++   -v -o CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp
         Using built-in specs.
         COLLECT_GCC=/usr/bin/c++
         OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
@@ -980,8 +1014,8 @@ events:
         Thread model: posix
         Supported LTO compression algorithms: zlib zstd
         gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_546c1.dir/'
-         /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_546c1.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/cc1fXeqY.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_9c7d2.dir/'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_9c7d2.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccGAYbU4.s
         GNU C++17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)
         	compiled by GNU C version 13.3.0, GMP version 6.3.0, MPFR version 4.2.1, MPC version 1.3.1, isl version isl-0.26-GMP
         
@@ -1002,14 +1036,14 @@ events:
          /usr/include
         End of search list.
         Compiler executable checksum: 7896445e4990772fdae9dc0659a99266
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_546c1.dir/'
-         as -v --64 -o CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o /tmp/cc1fXeqY.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_9c7d2.dir/'
+         as -v --64 -o CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccGAYbU4.s
         GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42
         COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.'
-        Linking CXX executable cmTC_546c1
-        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_546c1.dir/link.txt --verbose=1
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.'
+        Linking CXX executable cmTC_9c7d2
+        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9c7d2.dir/link.txt --verbose=1
         Using built-in specs.
         COLLECT_GCC=/usr/bin/c++
         COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper
@@ -1022,14 +1056,14 @@ events:
         gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 
         COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_546c1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_546c1.'
-         /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccLal4TL.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_546c1 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_9c7d2' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_9c7d2.'
+         /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccstk0VV.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_9c7d2 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
         collect2 version 13.3.0
-        /usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccLal4TL.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_546c1 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
+        /usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccstk0VV.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_9c7d2 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Ubuntu) 2.42
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_546c1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_546c1.'
-        /usr/bin/c++  -v -Wl,-v CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_546c1
-        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc'
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_9c7d2' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_9c7d2.'
+        /usr/bin/c++  -v -Wl,-v CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_9c7d2
+        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI'
         
       exitCode: 0
   -
@@ -1070,13 +1104,13 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc']
+        ignore line: [Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_546c1/fast]
-        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_546c1.dir/build.make CMakeFiles/cmTC_546c1.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-EiECKc']
-        ignore line: [Building CXX object CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [/usr/bin/c++   -v -o CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_9c7d2/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_9c7d2.dir/build.make CMakeFiles/cmTC_9c7d2.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-wj6ISI']
+        ignore line: [Building CXX object CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/bin/c++   -v -o CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -c /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/c++]
         ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
@@ -1086,8 +1120,8 @@ events:
         ignore line: [Thread model: posix]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_546c1.dir/']
-        ignore line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_546c1.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/cc1fXeqY.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_9c7d2.dir/']
+        ignore line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/share/cmake-4.3/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_9c7d2.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccGAYbU4.s]
         ignore line: [GNU C++17 (Ubuntu 13.3.0-6ubuntu2~24.04.1) version 13.3.0 (x86_64-linux-gnu)]
         ignore line: [	compiled by GNU C version 13.3.0  GMP version 6.3.0  MPFR version 4.2.1  MPC version 1.3.1  isl version isl-0.26-GMP]
         ignore line: []
@@ -1108,14 +1142,14 @@ events:
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
         ignore line: [Compiler executable checksum: 7896445e4990772fdae9dc0659a99266]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_546c1.dir/']
-        ignore line: [ as -v --64 -o CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o /tmp/cc1fXeqY.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_9c7d2.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccGAYbU4.s]
         ignore line: [GNU assembler version 2.42 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.42]
         ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.']
-        ignore line: [Linking CXX executable cmTC_546c1]
-        ignore line: [/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_546c1.dir/link.txt --verbose=1]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.']
+        ignore line: [Linking CXX executable cmTC_9c7d2]
+        ignore line: [/home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9c7d2.dir/link.txt --verbose=1]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/c++]
         ignore line: [COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper]
@@ -1128,13 +1162,13 @@ events:
         ignore line: [gcc version 13.3.0 (Ubuntu 13.3.0-6ubuntu2~24.04.1) ]
         ignore line: [COMPILER_PATH=/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/13/:/usr/libexec/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/13/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/13/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_546c1' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_546c1.']
-        link line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccLal4TL.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_546c1 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_9c7d2' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_9c7d2.']
+        link line: [ /usr/libexec/gcc/x86_64-linux-gnu/13/collect2 -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccstk0VV.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_9c7d2 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
           arg [/usr/libexec/gcc/x86_64-linux-gnu/13/collect2] ==> ignore
           arg [-plugin] ==> ignore
           arg [/usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so] ==> ignore
           arg [-plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper] ==> ignore
-          arg [-plugin-opt=-fresolution=/tmp/ccLal4TL.res] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/ccstk0VV.res] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
           arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -1152,7 +1186,7 @@ events:
           arg [-znow] ==> ignore
           arg [-zrelro] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_546c1] ==> ignore
+          arg [cmTC_9c7d2] ==> ignore
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o]
@@ -1165,7 +1199,7 @@ events:
           arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
           arg [-L/usr/lib/gcc/x86_64-linux-gnu/13/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/13/../../..]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lstdc++] ==> lib [stdc++]
           arg [-lm] ==> lib [m]
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -1176,7 +1210,7 @@ events:
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
         ignore line: [collect2 version 13.3.0]
-        ignore line: [/usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccLal4TL.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_546c1 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_546c1.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [/usr/bin/ld -plugin /usr/libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so -plugin-opt=/usr/libexec/gcc/x86_64-linux-gnu/13/lto-wrapper -plugin-opt=-fresolution=/tmp/ccstk0VV.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_9c7d2 /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/13 -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/13/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/13/../../.. -v CMakeFiles/cmTC_9c7d2.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o]
         linker tool for 'CXX': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o] ==> [/usr/lib/x86_64-linux-gnu/Scrt1.o]
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o] ==> [/usr/lib/x86_64-linux-gnu/crti.o]
@@ -1235,8 +1269,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -1288,8 +1324,10 @@ events:
     search_context:
       ENV{PATH}:
         - "/home/daniel/Desktop/approximate_ecc/venv/bin"
+        - "/home/daniel/Desktop/approximate_ecc/venv/bin"
         - "/home/daniel/.local/bin"
         - "/home/daniel/.npm-global/bin"
+        - "/home/daniel/.local/bin"
         - "/home/daniel/.local/bin"
         - "/usr/local/sbin"
         - "/usr/local/bin"
@@ -1327,8 +1365,8 @@ events:
     checks:
       - "Performing Test HAS_FLTO_AUTO"
     directories:
-      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-V9gCxE"
-      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-V9gCxE"
+      source: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-s9KDD9"
+      binary: "/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-s9KDD9"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -1339,17 +1377,17 @@ events:
       variable: "HAS_FLTO_AUTO"
       cached: true
       stdout: |
-        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-V9gCxE'
+        Change Dir: '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-s9KDD9'
         
-        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_17bd0/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_17bd0.dir/build.make CMakeFiles/cmTC_17bd0.dir/build
-        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-V9gCxE'
-        Building CXX object CMakeFiles/cmTC_17bd0.dir/src.cxx.o
-        /usr/bin/c++ -DHAS_FLTO_AUTO  -std=gnu++17   -flto=auto -fno-fat-lto-objects -o CMakeFiles/cmTC_17bd0.dir/src.cxx.o -c /home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-V9gCxE/src.cxx
-        Linking CXX executable cmTC_17bd0
-        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_17bd0.dir/link.txt --verbose=1
-        /usr/bin/c++ CMakeFiles/cmTC_17bd0.dir/src.cxx.o -o cmTC_17bd0  -flto=auto
-        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-V9gCxE'
+        Run Build Command(s): /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ad07f/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ad07f.dir/build.make CMakeFiles/cmTC_ad07f.dir/build
+        gmake[1]: Entering directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-s9KDD9'
+        Building CXX object CMakeFiles/cmTC_ad07f.dir/src.cxx.o
+        /usr/bin/c++ -DHAS_FLTO_AUTO  -std=gnu++17   -flto=auto -fno-fat-lto-objects -o CMakeFiles/cmTC_ad07f.dir/src.cxx.o -c /home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-s9KDD9/src.cxx
+        Linking CXX executable cmTC_ad07f
+        /home/daniel/Desktop/approximate_ecc/venv/lib/python3.12/site-packages/cmake/data/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ad07f.dir/link.txt --verbose=1
+        /usr/bin/c++ CMakeFiles/cmTC_ad07f.dir/src.cxx.o -o cmTC_ad07f  -flto=auto
+        gmake[1]: Leaving directory '/home/daniel/Desktop/approximate_ecc/build/CMakeFiles/CMakeScratch/TryCompile-s9KDD9'
         
       exitCode: 0
 ...

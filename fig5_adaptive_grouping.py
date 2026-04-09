@@ -27,6 +27,13 @@ from experiments.common import (
 from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
+MAX_BITS_PER_NODE = 64  # skip strategy+block_size combos where solver is intractable
+
+
+def _bits_per_node(bit_length: int, row_group_size: int, col_group_size: int) -> int:
+    """Largest node size (in source bits) for a given strategy and block size."""
+    n = math.ceil(math.sqrt(bit_length))
+    return max(row_group_size * n, col_group_size * n)
 DEFAULT_KEYS = 20
 DEFAULT_ROUNDS = 8
 HASH_BITS = 32
@@ -109,9 +116,14 @@ def main() -> None:
 
     all_tasks: list[tuple] = []
     all_metas: list[tuple] = []  # (strategy_label, L, flip_count, key_id)
+    skipped_cells: set[tuple[str, int]] = set()  # (strategy_label, L) pairs skipped as intractable
 
     for s in STRATEGIES:
         for L in bit_lengths:
+            if _bits_per_node(L, s["row_group_size"], s["col_group_size"]) > MAX_BITS_PER_NODE:
+                skipped_cells.add((s["label"], L))
+                print(f"  Skipping {s['label']} at L={L} — node too large ({_bits_per_node(L, s['row_group_size'], s['col_group_size'])} bits/node > {MAX_BITS_PER_NODE})")
+                continue
             for flip_count in flip_sweep_counts(L):
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
@@ -147,9 +159,17 @@ def main() -> None:
               ["strategy", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
 
     # Compute max correctable per (strategy, block size)
-    max_correctable: dict[tuple[str, int], int] = {}
+    max_correctable: dict[tuple[str, int], int | None] = {}
     for s in STRATEGIES:
         for L in bit_lengths:
+            overhead = compute_overhead_ratio(
+                L, s["row_group_size"], s["col_group_size"], hash_bits,
+                row_splits=s["row_splits"], col_splits=s["col_splits"],
+            )
+            if (s["label"], L) in skipped_cells:
+                max_correctable[(s["label"], L)] = None
+                print(f"  {s['label']:8s}  L={L:6d}  overhead={overhead:.1%}  SKIPPED (node too large)")
+                continue
             best = 0
             for flip_count in flip_sweep_counts(L):
                 subset = [
@@ -162,10 +182,6 @@ def main() -> None:
                 if rate >= SUCCESS_THRESHOLD:
                     best = flip_count
             max_correctable[(s["label"], L)] = best
-            overhead = compute_overhead_ratio(
-                L, s["row_group_size"], s["col_group_size"], hash_bits,
-                row_splits=s["row_splits"], col_splits=s["col_splits"],
-            )
             print(f"  {s['label']:8s}  L={L:6d}  overhead={overhead:.1%}  max_flips_at_{int(SUCCESS_THRESHOLD*100)}pct={best}")
 
     if args.no_plot:
@@ -203,8 +219,12 @@ def main() -> None:
 
     # Panel B: max correctable flips vs block size
     for s in STRATEGIES:
-        xs = sorted(bit_lengths)
-        ys = [max_correctable.get((s["label"], L), 0) for L in xs]
+        all_xs = sorted(bit_lengths)
+        all_ys = [max_correctable.get((s["label"], L)) for L in all_xs]
+        xs = [x for x, y in zip(all_xs, all_ys) if y is not None]
+        ys = [y for y in all_ys if y is not None]
+        if not xs:
+            continue
         color = STRATEGY_COLORS[s["label"]]
         linestyle = "--" if "group" in s["label"] else ("-" if s["label"] == "default" else ":")
         ax2.plot(xs, ys, linestyle=linestyle, marker="s", markersize=5,
