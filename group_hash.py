@@ -42,6 +42,27 @@ def _crc8(data: bytes, poly: int = 0x07, init: int = 0x00, xor_out: int = 0x00) 
     return crc ^ xor_out
 
 
+def _make_crc64_table(poly: int = 0x42F0E1EBA9EA3693) -> list:
+    table = []
+    for byte in range(256):
+        crc = byte << 56
+        for _ in range(8):
+            crc = ((crc << 1) ^ poly) if (crc & (1 << 63)) else (crc << 1)
+            crc &= 0xFFFFFFFFFFFFFFFF
+        table.append(crc)
+    return table
+
+
+_CRC64_TABLE = _make_crc64_table()
+
+
+def _crc64(data: bytes, init: int = 0xFFFFFFFFFFFFFFFF, xor_out: int = 0xFFFFFFFFFFFFFFFF) -> int:
+    crc = init
+    for byte in data:
+        crc = ((crc << 8) ^ _CRC64_TABLE[((crc >> 56) ^ byte) & 0xFF]) & 0xFFFFFFFFFFFFFFFF
+    return crc ^ xor_out
+
+
 def _make_crc16_table(poly: int = 0x1021) -> list:
     table = []
     for byte in range(256):
@@ -139,7 +160,9 @@ def _crc_hash(bits: list[int], hash_bits: int) -> int:
         return _crc16(data)
     if hash_bits == 32:
         return binascii.crc32(data) & 0xFFFFFFFF
-    raise ValueError("hash_bits must be one of 8, 16, 32")
+    if hash_bits == 64:
+        return _crc64(data)
+    raise ValueError("hash_bits must be one of 8, 16, 32, 64")
 
 
 def _iter_groups(length: int, group_size: int, tail_policy: TailPolicy) -> list[tuple[int, int]]:

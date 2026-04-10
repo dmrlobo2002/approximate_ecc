@@ -310,7 +310,7 @@ def correct_with_dag(
 ) -> SolveResult:
     # Use C++ fast path only when splits=1 and the iterative algorithm is not requested.
     # The C++ extension does not support row_splits/col_splits.
-    if _HAS_CPP and max_flips_ceiling is None and row_splits == 1 and col_splits == 1:
+    if _HAS_CPP and max_flips_ceiling is None and row_splits == 1 and col_splits == 1 and hash_bits <= 32:
         raw = _cpp_correct_with_dag(
             baseline_grid, current_grid, meta,
             row_group_size, col_group_size, hash_bits,
