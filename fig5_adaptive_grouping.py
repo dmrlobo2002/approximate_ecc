@@ -28,6 +28,7 @@ from experiments.common import (
     write_csv,
     write_json,
 )
+from experiments.ecc_comparison import bch_overhead
 from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
@@ -62,6 +63,10 @@ STRATEGIES = [
     {"label": "split-4", "row_group_size": 1, "col_group_size": 1, "row_splits": 4, "col_splits": 4},
 ]
 
+BCH_T_VALUES = [5, 20, 50]
+BCH_COLORS = {5: "#8c510a", 20: "#bf812d", 50: "#dfc27d"}
+BCH_CHUNK_SIZE = 256  # BCH applied to 256-bit chunks for L > 256
+
 STRATEGY_COLORS = {
     "group-4": "#d73027",
     "group-2": "#fc8d59",
@@ -69,6 +74,21 @@ STRATEGY_COLORS = {
     "split-2": "#4575b4",
     "split-4": "#313695",
 }
+
+
+def bch_overhead_ratio(L: int, t: int) -> float:
+    """BCH overhead ratio for block size L with correction capability t.
+    For L <= BCH_CHUNK_SIZE: exact analytical overhead via cyclotomic cosets.
+    For L > BCH_CHUNK_SIZE: constant — modeled as ceil(L/256) x BCH(256, t) chunks.
+    """
+    if L <= BCH_CHUNK_SIZE:
+        return bch_overhead(L, t)["overhead_ratio"]
+    return bch_overhead(BCH_CHUNK_SIZE, t)["parity_bits"] / BCH_CHUNK_SIZE
+
+
+def bch_max_correctable(L: int, t: int) -> int:
+    """Total errors BCH can correct across all 256-bit chunks covering L bits."""
+    return math.ceil(L / BCH_CHUNK_SIZE) * t
 
 
 def flip_sweep_counts(L: int) -> list[int]:
@@ -131,9 +151,15 @@ def main() -> None:
                 row_splits=s["row_splits"], col_splits=s["col_splits"],
             )
             row[f"overhead_{s['label']}"] = ratio
+        for t in BCH_T_VALUES:
+            row[f"overhead_bch_t{t}"] = bch_overhead_ratio(L, t)
         overhead_rows.append(row)
 
-    overhead_fieldnames = ["bit_length"] + [f"overhead_{s['label']}" for s in STRATEGIES]
+    overhead_fieldnames = (
+        ["bit_length"]
+        + [f"overhead_{s['label']}" for s in STRATEGIES]
+        + [f"overhead_bch_t{t}" for t in BCH_T_VALUES]
+    )
     write_csv(os.path.join(args.out_dir, "fig5_overhead.csv"), overhead_rows, overhead_fieldnames)
 
     # --- Panel B: empirical max-correctable flips at ≥95% success ---
@@ -282,13 +308,17 @@ def main() -> None:
     )
 
     # Panel A: overhead vs block size
+    xs = [r["bit_length"] for r in overhead_rows]
     for s in STRATEGIES:
-        xs = [r["bit_length"] for r in overhead_rows]
         ys = [r[f"overhead_{s['label']}"] * 100 for r in overhead_rows]
         color = STRATEGY_COLORS[s["label"]]
         linestyle = "--" if "group" in s["label"] else ("-" if s["label"] == "default" else ":")
         ax1.plot(xs, ys, linestyle=linestyle, marker="o", markersize=4,
                  color=color, linewidth=2, label=s["label"])
+    for t in BCH_T_VALUES:
+        ys = [r[f"overhead_bch_t{t}"] * 100 for r in overhead_rows]
+        ax1.plot(xs, ys, linestyle=":", marker="^", markersize=3,
+                 color=BCH_COLORS[t], linewidth=1.5, label=f"BCH t={t}")
 
     ax1.set_xscale("log", base=2)
     ax1.set_xlabel("Block size (bits)")
@@ -300,8 +330,8 @@ def main() -> None:
     ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
 
     # Panel B: max correctable flips vs block size
+    all_xs = sorted(bit_lengths)
     for s in STRATEGIES:
-        all_xs = sorted(bit_lengths)
         all_ys = [max_correctable.get((s["label"], L)) for L in all_xs]
         xs = [x for x, y in zip(all_xs, all_ys) if y is not None]
         ys = [y for y in all_ys if y is not None]
@@ -311,6 +341,10 @@ def main() -> None:
         linestyle = "--" if "group" in s["label"] else ("-" if s["label"] == "default" else ":")
         ax2.plot(xs, ys, linestyle=linestyle, marker="s", markersize=5,
                  color=color, linewidth=2, label=s["label"])
+    for t in BCH_T_VALUES:
+        ys = [bch_max_correctable(L, t) for L in all_xs]
+        ax2.plot(all_xs, ys, linestyle=":", marker="^", markersize=3,
+                 color=BCH_COLORS[t], linewidth=1.5, label=f"BCH t={t}")
 
     ax2.set_xscale("log", base=2)
     ax2.set_xlabel("Block size (bits)")
