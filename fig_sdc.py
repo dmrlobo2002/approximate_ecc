@@ -79,6 +79,8 @@ def parse_args() -> argparse.Namespace:
                    help="Skip the group-size variation sub-figure")
     p.add_argument("--parallel", action="store_true")
     p.add_argument("--workers", type=int, default=0)
+    p.add_argument("--max-flips", type=int, default=None,
+                   help="Max combo evaluations per trial before giving up (default: unlimited)")
     return p.parse_args()
 
 
@@ -98,7 +100,7 @@ def _classify(trial: dict[str, Any]) -> tuple[int, int, int]:
 
 
 def _build_tasks(
-    bit_lengths, hash_bits_list, group_sizes, ber_values, keys, rounds, seed
+    bit_lengths, hash_bits_list, group_sizes, ber_values, keys, rounds, seed, max_flips=None
 ):
     """Return (tasks, metas) for all (L, h, g, ber, key_id) combinations."""
     all_tasks: list[tuple] = []
@@ -116,7 +118,7 @@ def _build_tasks(
                         flip_indices = get_flip_indices(flip_count, L, "random", rng)
                         all_tasks.append((
                             bits, key, rounds, flip_indices,
-                            g, g, h, "include_partial", None, 0, "crc", 1, 1,
+                            g, g, h, "include_partial", max_flips, 0, "crc", 1, 1,
                         ))
                         all_metas.append((L, h, g, ber, flip_count, key_id))
 
@@ -259,7 +261,7 @@ def main() -> None:
           f"{args.keys} keys)...")
     fig1_tasks, fig1_metas = _build_tasks(
         bit_lengths, hash_bits_list, [FIXED_GROUP_SIZE],
-        ber_values, args.keys, args.rounds, args.seed
+        ber_values, args.keys, args.rounds, args.seed, args.max_flips
     )
     print(f"  {len(fig1_tasks)} trials")
 
@@ -270,7 +272,7 @@ def main() -> None:
               f"(L={FIXED_BIT_LENGTH_GS}, {len(DEFAULT_GROUP_SIZES)} group sizes)...")
         fig2_tasks, fig2_metas = _build_tasks(
             [FIXED_BIT_LENGTH_GS], hash_bits_list, DEFAULT_GROUP_SIZES,
-            ber_values, args.keys, args.rounds, args.seed
+            ber_values, args.keys, args.rounds, args.seed, args.max_flips
         )
         print(f"  {len(fig2_tasks)} trials")
 

@@ -67,6 +67,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-plot", action="store_true")
     p.add_argument("--parallel", action="store_true")
     p.add_argument("--workers", type=int, default=0)
+    p.add_argument("--max-flips", type=int, default=None,
+                   help="Max combo evaluations per trial before giving up (default: unlimited)")
     return p.parse_args()
 
 
@@ -108,7 +110,7 @@ def main() -> None:
                     bits_by_length[L], key, args.rounds, flip_indices,
                     1, 1,           # row_group_size, col_group_size
                     hash_bits,
-                    "include_partial", None, 0, "crc",
+                    "include_partial", args.max_flips, 0, "crc",
                     1, 1,           # row_splits, col_splits
                 ))
                 all_metas.append((L, ber, key_id))

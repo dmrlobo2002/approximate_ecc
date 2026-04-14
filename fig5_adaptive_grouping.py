@@ -109,8 +109,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-plot", action="store_true")
     p.add_argument("--parallel", action="store_true")
     p.add_argument("--workers", type=int, default=0)
-    p.add_argument("--max-combos", type=int, default=DEFAULT_MAX_COMBOS,
-                   help="Per-trial combo budget (0 = unlimited, not recommended)")
+    p.add_argument("--max-flips", type=int, default=DEFAULT_MAX_COMBOS,
+                   help="Max combo evaluations per trial before giving up (0 = unlimited, not recommended)")
     p.add_argument("--hash-sweep-lengths", type=str,
                    default=",".join(str(x) for x in DEFAULT_HASH_SWEEP_LENGTHS),
                    help="Block sizes for hash-width sweep (Panel C)")
@@ -123,7 +123,7 @@ def main() -> None:
     if not bit_lengths:
         raise ValueError("--bit-lengths must be non-empty")
     ensure_dir(args.out_dir)
-    max_combos = args.max_combos if args.max_combos > 0 else None
+    max_combos = args.max_flips if args.max_flips > 0 else None
     hash_sweep_lengths = parse_int_list(args.hash_sweep_lengths)
     write_json(os.path.join(args.out_dir, "config.json"), {
         "bit_lengths": bit_lengths,
