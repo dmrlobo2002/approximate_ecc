@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any
 
 from bitflip_solver import correct_with_dag
@@ -88,10 +88,25 @@ def _trial_task(task: tuple) -> dict[str, Any]:
 
 
 def run_trials_parallel(tasks: list[tuple], n_workers: int = 0) -> list[dict[str, Any]]:
-    workers = n_workers if n_workers > 0 else min(len(tasks), os.cpu_count() or 1)
+    total = len(tasks)
+    workers = n_workers if n_workers > 0 else min(total, os.cpu_count() or 1)
+    results: list[dict[str, Any] | None] = [None] * total
+    done = 0
     with ProcessPoolExecutor(max_workers=workers) as ex:
-        return list(ex.map(_trial_task, tasks))
+        futures = {ex.submit(_trial_task, t): i for i, t in enumerate(tasks)}
+        for fut in as_completed(futures):
+            results[futures[fut]] = fut.result()
+            done += 1
+            print(f"\r  Progress: {done}/{total} ({100 * done / total:.1f}%)", end="", flush=True)
+    print()
+    return results  # type: ignore[return-value]
 
 
 def run_trials_serial(tasks: list[tuple]) -> list[dict[str, Any]]:
-    return [_trial_task(t) for t in tasks]
+    total = len(tasks)
+    results = []
+    for i, t in enumerate(tasks):
+        results.append(_trial_task(t))
+        print(f"\r  Progress: {i + 1}/{total} ({100 * (i + 1) / total:.1f}%)", end="", flush=True)
+    print()
+    return results

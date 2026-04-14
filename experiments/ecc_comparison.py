@@ -13,21 +13,23 @@ import math
 
 def hamming_overhead(data_bits: int) -> dict:
     """
-    Systematic Hamming code for `data_bits` data bits.
+    Hamming/SECDED overhead using the standard (72, 64) SECDED building block.
 
-    The number of parity bits r satisfies 2^r >= data_bits + r + 1.
-    Can correct 1 error, detect 2 errors (with extended Hamming parity bit).
+    Memory ECC is deployed as SECDED over 64-bit words: 8 parity bits per word,
+    12.5% overhead, corrects 1 bit per word, detects 2.
+    For any data_bits, tile ceil(data_bits / 64) such codewords.
     """
-    r = 1
-    while (1 << r) < data_bits + r + 1:
-        r += 1
+    SECDED_DATA = 64    # data bits per word
+    SECDED_PARITY = 8   # parity bits per word
+    n_blocks = math.ceil(data_bits / SECDED_DATA)
+    total_parity = n_blocks * SECDED_PARITY
     return {
-        "scheme": f"Hamming({data_bits + r},{data_bits})",
+        "scheme": f"SECDED({n_blocks}×(72,64))",
         "data_bits": data_bits,
-        "parity_bits": r,
-        "overhead_ratio": r / data_bits,
-        "correctable_bits": 1,
-        "detectable_bits": 2,
+        "parity_bits": total_parity,
+        "overhead_ratio": total_parity / data_bits,
+        "correctable_bits": n_blocks,   # 1 bit per 64-bit word
+        "detectable_bits": 2 * n_blocks,
     }
 
 
@@ -43,16 +45,23 @@ def bch_overhead(data_bits: int, t: int) -> dict:
     Overhead is reported relative to data_bits (as for a shortened BCH code), which
     is the relevant metric when comparing against a fixed data size.
 
-    For data_bits > 256, BCH is modeled as x2 overhead (overhead_ratio = 1.0).
+    For data_bits > 256, tile ceil(data_bits/256) BCH(256, t) codewords with the same
+    t per block. Overhead ratio = BCH(256, t) overhead (constant in data_bits).
     """
     if data_bits > 256:
+        # Tile multiple BCH(256, t) codewords — same t per 256-bit block.
+        # Overhead ratio = BCH(256, t) overhead ratio (constant regardless of data_bits).
+        # Correctable bits scale with the number of blocks.
+        n_blocks = math.ceil(data_bits / 256)
+        base = bch_overhead(256, t)
+        total_parity = n_blocks * base["parity_bits"]
         return {
-            "scheme": f"BCH(x2,t={t})",
+            "scheme": f"BCH({n_blocks}×BCH(256),t={t}/block)",
             "data_bits": data_bits,
-            "parity_bits": data_bits,
-            "overhead_ratio": 1.0,
-            "correctable_bits": t,
-            "detectable_bits": 2 * t,
+            "parity_bits": total_parity,
+            "overhead_ratio": total_parity / data_bits,
+            "correctable_bits": n_blocks * t,
+            "detectable_bits": n_blocks * 2 * t,
         }
 
     m = max(1, math.ceil(math.log2(data_bits + 1)))
@@ -106,6 +115,66 @@ def bch_decode_ops(data_bits: int, t: int) -> int:
     chien_cost = n * t
     forney_cost = n * t
     return syndrome_cost + bm_cost + chien_cost + forney_cost
+
+
+def rs_overhead(data_bits: int, t: int, symbol_bits: int = 8) -> dict:
+    """
+    Reed-Solomon overhead for correcting t symbol errors per codeword over GF(2^symbol_bits).
+
+    Natural unit: RS(255, 255-2t) over GF(2^8) — the standard 255-byte codeword.
+    `t` is the number of symbol errors correctable per 255-symbol codeword.
+
+    For data_bits <= (255-2t)*symbol_bits (fits in one shortened codeword):
+      parity = 2t * symbol_bits, overhead = parity / data_bits.
+
+    For larger blocks: tile ceil(data_bits / natural_data_bits) full RS(255) codewords.
+      Overhead ratio converges to 2t / (255-2t) (constant, independent of data_bits).
+    """
+    MAX_SYMBOLS = 255
+    natural_data_bits = (MAX_SYMBOLS - 2 * t) * symbol_bits
+    if natural_data_bits <= 0:
+        raise ValueError(f"t={t} too large for RS over GF(2^{symbol_bits}): max t={MAX_SYMBOLS // 2 - 1}")
+
+    parity_per_codeword = 2 * t * symbol_bits
+    if data_bits <= natural_data_bits:
+        # Shortened RS: same 2t parity symbols, fewer data symbols.
+        return {
+            "scheme": f"RS(GF(2^{symbol_bits}),t={t}sym)",
+            "data_bits": data_bits,
+            "parity_bits": parity_per_codeword,
+            "overhead_ratio": parity_per_codeword / data_bits,
+            "correctable_symbols": t,
+            "correctable_bits": t * symbol_bits,
+            "detectable_bits": 2 * t * symbol_bits,
+        }
+    else:
+        # Tile multiple RS(255, 255-2t) codewords.
+        n_blocks = math.ceil(data_bits / natural_data_bits)
+        total_parity = n_blocks * parity_per_codeword
+        return {
+            "scheme": f"RS({n_blocks}×RS(255),t={t}sym/block)",
+            "data_bits": data_bits,
+            "parity_bits": total_parity,
+            "overhead_ratio": total_parity / data_bits,
+            "correctable_symbols": n_blocks * t,
+            "correctable_bits": n_blocks * t * symbol_bits,
+            "detectable_bits": n_blocks * 2 * t * symbol_bits,
+        }
+
+
+def rs_overhead_for_ber(data_bits: int, ber: float, symbol_bits: int = 8) -> dict:
+    """
+    RS overhead required at a given BER, using per-codeword expected symbol-error count.
+
+    Uses the RS(255) tiling model: t is the expected errored symbols per 255-symbol
+    codeword, which is 255 * (1 - (1 - ber)^symbol_bits).
+    """
+    if data_bits <= symbol_bits or ber <= 0.0:
+        t = 0
+    else:
+        p_sym_error = 1.0 - (1.0 - ber) ** symbol_bits
+        t = math.ceil(255 * p_sym_error)   # per RS(255) codeword
+    return rs_overhead(data_bits, t, symbol_bits)
 
 
 def ldpc_overhead(data_bits: int, code_rate: float = 0.5) -> dict:
