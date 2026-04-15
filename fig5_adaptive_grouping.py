@@ -93,7 +93,7 @@ def bch_max_correctable(L: int, t: int) -> int:
 def flip_sweep_counts(L: int) -> list[int]:
     """Flip counts to sweep for a given block size — steps of ~1% of L."""
     step = max(1, int(0.01 * L))
-    max_fc = max(step, int(0.15 * L))
+    max_fc = max(step, int(0.40 * L))
     return list(range(step, max_fc + step, step))
 
 
