@@ -176,8 +176,9 @@ def main() -> None:
     max_correctable: dict[tuple[str, int, int], int | None] = {}
     skipped_cells: set[tuple[str, int]] = set()
 
-    # Build group list, marking skipped cells up front
-    b_groups: list[tuple] = []  # (s_dict, hb, L)
+    # Build group list — keys are (label, hb, L) so they're hashable
+    strategy_by_label = {s["label"]: s for s in STRATEGIES}
+    b_groups: list[tuple] = []  # (label, hb, L)
     for s in STRATEGIES:
         for L in bit_lengths:
             node_bits = _bits_per_node(L, s["row_group_size"], s["col_group_size"], s["row_splits"], s["col_splits"])
@@ -188,10 +189,10 @@ def main() -> None:
                     max_correctable[(s["label"], hb, L)] = None
                 continue
             for hb in PANEL_HASH_BITS:
-                b_groups.append((s, hb, L))
+                b_groups.append((s["label"], hb, L))
 
-    g_best:   dict[tuple, int] = {g: 0 for g in b_groups}
-    g_consec: dict[tuple, int] = {g: 0 for g in b_groups}
+    g_best:   dict[tuple, int]  = {g: 0     for g in b_groups}
+    g_consec: dict[tuple, int]  = {g: 0     for g in b_groups}
     g_done:   dict[tuple, bool] = {g: False for g in b_groups}
     flip_lists = {L: flip_sweep_counts(L) for L in bit_lengths}
     max_steps = max(len(v) for v in flip_lists.values())
@@ -206,7 +207,8 @@ def main() -> None:
             for g in b_groups:
                 if g_done[g]:
                     continue
-                s, hb, L = g
+                label, hb, L = g
+                s = strategy_by_label[label]
                 fcs = flip_lists[L]
                 if step >= len(fcs):
                     g_done[g] = True
@@ -215,7 +217,7 @@ def main() -> None:
                 bits = bits_by_length[L]
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
-                    rng = stable_rng(args.seed, key_id, flip_count, hb, L, s["label"])
+                    rng = stable_rng(args.seed, key_id, flip_count, hb, L, label)
                     flip_indices = get_flip_indices(flip_count, L, "random", rng)
                     step_tasks.append((
                         bits, key, args.rounds, flip_indices,
@@ -241,12 +243,12 @@ def main() -> None:
                 by_group[g].append((key_id, flip_count, result))
 
             for g, key_results in by_group.items():
-                s, hb, L = g
+                label, hb, L = g
                 flip_count = key_results[0][1]
                 rate = sum(r["fully_corrected"] for _, _, r in key_results) / len(key_results)
                 for key_id, fc, trial in key_results:
                     empirical_rows.append({
-                        "strategy": s["label"],
+                        "strategy": label,
                         "hash_bits": hb,
                         "bit_length": L,
                         "flip_count": fc,
@@ -263,14 +265,15 @@ def main() -> None:
                         g_done[g] = True
 
     for g in b_groups:
-        s, hb, L = g
+        label, hb, L = g
+        s = strategy_by_label[label]
         best = g_best[g]
         overhead = compute_overhead_ratio(
             L, s["row_group_size"], s["col_group_size"], hb,
             row_splits=s["row_splits"], col_splits=s["col_splits"],
         )
-        max_correctable[(s["label"], hb, L)] = best
-        print(f"  {s['label']:8s}  CRC-{hb:2d}  L={L:6d}  overhead={overhead:.1%}  max_flips={best}")
+        max_correctable[(label, hb, L)] = best
+        print(f"  {label:8s}  CRC-{hb:2d}  L={L:6d}  overhead={overhead:.1%}  max_flips={best}")
 
     write_csv(os.path.join(args.out_dir, "fig5_empirical.csv"), empirical_rows,
               ["strategy", "hash_bits", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
