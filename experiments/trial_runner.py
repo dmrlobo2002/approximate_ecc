@@ -102,6 +102,19 @@ def run_trials_parallel(tasks: list[tuple], n_workers: int = 0) -> list[dict[str
     return results  # type: ignore[return-value]
 
 
+def run_batch(tasks: list[tuple], parallel: bool = False, n_workers: int = 0) -> list[dict[str, Any]]:
+    """Run a small batch of tasks (e.g. one flip-count × all keys) without progress reporting."""
+    if not parallel or len(tasks) <= 1:
+        return [_trial_task(t) for t in tasks]
+    workers = n_workers if n_workers > 0 else min(len(tasks), os.cpu_count() or 1)
+    results: list[dict[str, Any] | None] = [None] * len(tasks)
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(_trial_task, t): i for i, t in enumerate(tasks)}
+        for fut in as_completed(futures):
+            results[futures[fut]] = fut.result()
+    return results  # type: ignore[return-value]
+
+
 def run_trials_serial(tasks: list[tuple]) -> list[dict[str, Any]]:
     total = len(tasks)
     results = []

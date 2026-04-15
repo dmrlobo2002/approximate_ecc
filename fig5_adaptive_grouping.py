@@ -28,7 +28,7 @@ from experiments.common import (
     write_json,
 )
 from experiments.ecc_comparison import bch_overhead
-from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
+from experiments.trial_runner import get_flip_indices, run_batch
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
 MAX_BITS_PER_NODE = 64  # skip strategy+block_size combos where solver is intractable
@@ -44,6 +44,7 @@ DEFAULT_HASH_SWEEP_LENGTHS = [128, 256, 512, 1024]
 DEFAULT_KEYS = 20
 DEFAULT_ROUNDS = 8
 SUCCESS_THRESHOLD = 0.95
+EARLY_STOP_CONSECUTIVE = 3  # stop a (strategy, hb, L) sweep after this many consecutive failures
 
 STRATEGIES = [
     {"label": "group-4", "row_group_size": 4, "col_group_size": 4, "row_splits": 1, "col_splits": 1},
@@ -163,133 +164,112 @@ def main() -> None:
     all_lengths_needed = sorted(set(bit_lengths) | set(hash_sweep_lengths))
     bits_by_length = {L: [(i * 3 + 1) % 2 for i in range(L)] for L in all_lengths_needed}
 
-    all_tasks: list[tuple] = []
-    all_metas: list[tuple] = []  # (strategy_label, hb, L, flip_count, key_id)
-    skipped_cells: set[tuple[str, int]] = set()  # (strategy_label, L)
+    workers = args.workers if args.workers > 0 else (os.cpu_count() or 1)
 
+    # --- Panel B: sweep flip counts per (strategy, hb, L) with early stopping ---
+    empirical_rows: list[dict[str, Any]] = []
+    max_correctable: dict[tuple[str, int, int], int | None] = {}
+    skipped_cells: set[tuple[str, int]] = set()
+
+    print(f"Panel B: {len(STRATEGIES)} strategies × {len(PANEL_HASH_BITS)} hash sizes × {len(bit_lengths)} block sizes (early stop after {EARLY_STOP_CONSECUTIVE} consecutive failures)")
     for s in STRATEGIES:
         for L in bit_lengths:
             node_bits = _bits_per_node(L, s["row_group_size"], s["col_group_size"], s["row_splits"], s["col_splits"])
             if node_bits > MAX_BITS_PER_NODE:
                 skipped_cells.add((s["label"], L))
                 print(f"  Skipping {s['label']} at L={L} — node too large ({node_bits} bits/node > {MAX_BITS_PER_NODE})")
+                for hb in PANEL_HASH_BITS:
+                    max_correctable[(s["label"], hb, L)] = None
                 continue
+            bits = bits_by_length[L]
             for hb in PANEL_HASH_BITS:
+                consecutive_fails = 0
+                best = 0
                 for flip_count in flip_sweep_counts(L):
+                    tasks = []
                     for key_id in range(args.keys):
                         key = stable_key(args.seed, key_id)
                         rng = stable_rng(args.seed, key_id, flip_count, hb, L, s["label"])
                         flip_indices = get_flip_indices(flip_count, L, "random", rng)
-                        all_tasks.append((
-                            bits_by_length[L], key, args.rounds, flip_indices,
+                        tasks.append((
+                            bits, key, args.rounds, flip_indices,
                             s["row_group_size"], s["col_group_size"],
                             hb, "include_partial", max_combos, 0, "crc",
                             s["row_splits"], s["col_splits"],
                         ))
-                        all_metas.append((s["label"], hb, L, flip_count, key_id))
-
-    print(f"Running {len(all_tasks)} trials across {len(STRATEGIES)} strategies × {len(PANEL_HASH_BITS)} hash sizes × {len(bit_lengths)} block sizes...")
-    if args.parallel:
-        flat_results = run_trials_parallel(all_tasks, args.workers)
-    else:
-        flat_results = run_trials_serial(all_tasks)
-
-    empirical_rows: list[dict[str, Any]] = []
-    for trial, (label, hb, L, flip_count, key_id) in zip(flat_results, all_metas):
-        empirical_rows.append({
-            "strategy": label,
-            "hash_bits": hb,
-            "bit_length": L,
-            "flip_count": flip_count,
-            "key_id": key_id,
-            "fully_corrected": int(trial["fully_corrected"]),
-            "solve_time_ms": trial["solve_time_ms"],
-        })
-
-    write_csv(os.path.join(args.out_dir, "fig5_empirical.csv"), empirical_rows,
-              ["strategy", "hash_bits", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
-
-    # Compute max correctable per (strategy, hash_bits, block_size)
-    max_correctable: dict[tuple[str, int, int], int | None] = {}
-    for s in STRATEGIES:
-        for L in bit_lengths:
-            for hb in PANEL_HASH_BITS:
+                    results = run_batch(tasks, args.parallel, workers)
+                    rate = sum(r["fully_corrected"] for r in results) / len(results)
+                    for key_id, trial in enumerate(results):
+                        empirical_rows.append({
+                            "strategy": s["label"],
+                            "hash_bits": hb,
+                            "bit_length": L,
+                            "flip_count": flip_count,
+                            "key_id": key_id,
+                            "fully_corrected": int(trial["fully_corrected"]),
+                            "solve_time_ms": trial["solve_time_ms"],
+                        })
+                    if rate >= SUCCESS_THRESHOLD:
+                        best = flip_count
+                        consecutive_fails = 0
+                    else:
+                        consecutive_fails += 1
+                        if consecutive_fails >= EARLY_STOP_CONSECUTIVE:
+                            break
                 overhead = compute_overhead_ratio(
                     L, s["row_group_size"], s["col_group_size"], hb,
                     row_splits=s["row_splits"], col_splits=s["col_splits"],
                 )
-                if (s["label"], L) in skipped_cells:
-                    max_correctable[(s["label"], hb, L)] = None
-                    continue
-                best = 0
-                for flip_count in flip_sweep_counts(L):
-                    subset = [
-                        r for r in empirical_rows
-                        if r["strategy"] == s["label"] and r["hash_bits"] == hb
-                        and r["bit_length"] == L and r["flip_count"] == flip_count
-                    ]
-                    if not subset:
-                        continue
-                    rate = sum(r["fully_corrected"] for r in subset) / len(subset)
-                    if rate >= SUCCESS_THRESHOLD:
-                        best = flip_count
                 max_correctable[(s["label"], hb, L)] = best
                 print(f"  {s['label']:8s}  CRC-{hb:2d}  L={L:6d}  overhead={overhead:.1%}  max_flips={best}")
 
-    # --- Panel C: hash size sweep (default strategy, smaller block sizes) ---
-    hash_sweep_tasks: list[tuple] = []
-    hash_sweep_metas: list[tuple] = []  # (hb, L, flip_count, key_id)
+    write_csv(os.path.join(args.out_dir, "fig5_empirical.csv"), empirical_rows,
+              ["strategy", "hash_bits", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
 
+    # --- Panel C: hash size sweep (default strategy, smaller block sizes) with early stopping ---
+    hash_sweep_rows: list[dict[str, Any]] = []
+    hash_max_correctable: dict[tuple[int, int], int] = {}
+
+    print(f"Panel C: {len(PANEL_HASH_BITS)} hash widths × {len(hash_sweep_lengths)} block sizes (early stop after {EARLY_STOP_CONSECUTIVE} consecutive failures)")
     for hb in PANEL_HASH_BITS:
         for L in hash_sweep_lengths:
+            bits = bits_by_length[L]
+            consecutive_fails = 0
+            best = 0
             for flip_count in flip_sweep_counts(L):
+                tasks = []
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
                     rng = stable_rng(args.seed, key_id, flip_count, hb, L, "hash_sweep")
                     flip_indices = get_flip_indices(flip_count, L, "random", rng)
-                    hash_sweep_tasks.append((
-                        bits_by_length[L], key, args.rounds, flip_indices,
+                    tasks.append((
+                        bits, key, args.rounds, flip_indices,
                         1, 1, hb, "include_partial", max_combos, 0, "crc", 1, 1,
                     ))
-                    hash_sweep_metas.append((hb, L, flip_count, key_id))
-
-    print(f"Running {len(hash_sweep_tasks)} hash-sweep trials ({len(PANEL_HASH_BITS)} hash widths × {len(hash_sweep_lengths)} block sizes)...")
-    if args.parallel:
-        hash_sweep_results = run_trials_parallel(hash_sweep_tasks, args.workers)
-    else:
-        hash_sweep_results = run_trials_serial(hash_sweep_tasks)
-
-    hash_sweep_rows: list[dict[str, Any]] = []
-    for trial, (hb, L, flip_count, key_id) in zip(hash_sweep_results, hash_sweep_metas):
-        hash_sweep_rows.append({
-            "hash_bits": hb,
-            "bit_length": L,
-            "flip_count": flip_count,
-            "key_id": key_id,
-            "fully_corrected": int(trial["fully_corrected"]),
-            "solve_time_ms": trial["solve_time_ms"],
-        })
-
-    write_csv(os.path.join(args.out_dir, "fig5_hash_sweep.csv"), hash_sweep_rows,
-              ["hash_bits", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
-
-    hash_max_correctable: dict[tuple[int, int], int] = {}
-    for hb in PANEL_HASH_BITS:
-        for L in hash_sweep_lengths:
-            best = 0
-            for flip_count in flip_sweep_counts(L):
-                subset = [
-                    r for r in hash_sweep_rows
-                    if r["hash_bits"] == hb and r["bit_length"] == L and r["flip_count"] == flip_count
-                ]
-                if not subset:
-                    continue
-                rate = sum(r["fully_corrected"] for r in subset) / len(subset)
+                results = run_batch(tasks, args.parallel, workers)
+                rate = sum(r["fully_corrected"] for r in results) / len(results)
+                for key_id, trial in enumerate(results):
+                    hash_sweep_rows.append({
+                        "hash_bits": hb,
+                        "bit_length": L,
+                        "flip_count": flip_count,
+                        "key_id": key_id,
+                        "fully_corrected": int(trial["fully_corrected"]),
+                        "solve_time_ms": trial["solve_time_ms"],
+                    })
                 if rate >= SUCCESS_THRESHOLD:
                     best = flip_count
+                    consecutive_fails = 0
+                else:
+                    consecutive_fails += 1
+                    if consecutive_fails >= EARLY_STOP_CONSECUTIVE:
+                        break
             hash_max_correctable[(hb, L)] = best
             overhead = compute_overhead_ratio(L, 1, 1, hb)
             print(f"  CRC-{hb:2d}  L={L:6d}  overhead={overhead:.1%}  max_flips_at_{int(SUCCESS_THRESHOLD*100)}pct={best}")
+
+    write_csv(os.path.join(args.out_dir, "fig5_hash_sweep.csv"), hash_sweep_rows,
+              ["hash_bits", "bit_length", "flip_count", "key_id", "fully_corrected", "solve_time_ms"])
 
     if args.no_plot:
         return
