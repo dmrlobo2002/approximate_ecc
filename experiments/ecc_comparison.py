@@ -96,6 +96,47 @@ def bch_overhead(data_bits: int, t: int) -> dict:
     }
 
 
+def bch_block_success_prob(t: int, ber: float, block_size: int = 256) -> float:
+    """P(Bin(block_size, ber) <= t) — probability one BCH(block_size, t) block succeeds.
+
+    Uses iterative binomial CDF without scipy:
+        term_0 = (1-ber)^block_size
+        term_{k+1} = term_k * ber/(1-ber) * (block_size-k)/(k+1)
+    """
+    if ber <= 0.0:
+        return 1.0
+    if ber >= 1.0:
+        return 1.0 if t >= block_size else 0.0
+    if t < 0:
+        return 0.0
+    p, q = ber, 1.0 - ber
+    term = q ** block_size
+    total = term
+    for k in range(t):
+        term = term * (p / q) * (block_size - k) / (k + 1)
+        total += term
+    return min(total, 1.0)
+
+
+def bch_t_for_target_success(
+    ber: float,
+    n_blocks: int,
+    target_prob: float = 0.95,
+    block_size: int = 256,
+) -> int:
+    """Min t such that bch_block_success_prob(t, ber)^n_blocks >= target_prob.
+
+    Linear search t=1..block_size//2; returns block_size//2 if never satisfied.
+    For ber=0 or n_blocks=0 returns 0.
+    """
+    if ber <= 0.0 or n_blocks <= 0:
+        return 0
+    for t in range(1, block_size // 2 + 1):
+        if bch_block_success_prob(t, ber, block_size) ** n_blocks >= target_prob:
+            return t
+    return block_size // 2
+
+
 def bch_decode_ops(data_bits: int, t: int) -> int:
     """
     Approximate number of GF field operations for BCH decoding with t error correction.

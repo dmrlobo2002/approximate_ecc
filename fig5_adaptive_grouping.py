@@ -479,7 +479,7 @@ def main() -> None:
         for t in BCH_T_VALUES:
             ys = [r[f"overhead_bch_t{t}"] * 100 for r in overhead_rows]
             ax.plot(xs_plot, ys, linestyle=":", marker="^", markersize=2.5,
-                    color=BCH_COLORS[t], linewidth=1.3, label=f"BCH t={t}")
+                    color=BCH_COLORS[t], linewidth=1.3, label=f"BCH t={t} (theoretical upper bound)")
 
         ax.set_xscale("log", base=2)
         ax.set_xlabel("Block size (bits)", fontsize=8)
@@ -487,6 +487,11 @@ def main() -> None:
         ax.set_title(f"Overhead — CRC-{hb}\n(grouping vs splits vs BCH)", fontsize=9)
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=7, ncol=2)
+        if col == 0:
+            ax.text(0.03, 0.97, "BCH: theoretical max\n(0% actual success for large L)",
+                    transform=ax.transAxes, fontsize=6.5, va="top",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="#fff3cd",
+                              edgecolor="#856404", alpha=0.9))
         ax.yaxis.set_major_formatter(ticker.PercentFormatter())
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
         ax.tick_params(labelsize=7)
@@ -506,7 +511,7 @@ def main() -> None:
         for t in BCH_T_VALUES:
             ys = [bch_max_correctable(L, t) for L in all_xs]
             ax.plot(all_xs, ys, linestyle=":", marker="^", markersize=2.5,
-                    color=BCH_COLORS[t], linewidth=1.3, label=f"BCH t={t}")
+                    color=BCH_COLORS[t], linewidth=1.3, label=f"BCH t={t} (theoretical upper bound)")
 
         ax.set_xscale("log", base=2)
         ax.set_xlabel("Block size (bits)", fontsize=8)
@@ -514,6 +519,11 @@ def main() -> None:
         ax.set_title(f"Max correctable — CRC-{hb}\n(≥{int(SUCCESS_THRESHOLD*100)}% success)", fontsize=9)
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=7, ncol=2)
+        if col == 0:
+            ax.text(0.03, 0.97, "BCH: theoretical max\n(0% actual success for large L)",
+                    transform=ax.transAxes, fontsize=6.5, va="top",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="#fff3cd",
+                              edgecolor="#856404", alpha=0.9))
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"{int(x):,}"))
         ax.tick_params(labelsize=7)
 

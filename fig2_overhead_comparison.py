@@ -22,7 +22,7 @@ from experiments.common import (
     write_csv,
     write_json,
 )
-from experiments.ecc_comparison import bch_decode_ops, bch_overhead
+from experiments.ecc_comparison import bch_decode_ops, bch_overhead, bch_t_for_target_success
 from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTH = 4096
@@ -100,6 +100,27 @@ def main() -> None:
 
     write_csv(os.path.join(args.out_dir, "fig2_bch.csv"), bch_rows,
               ["t", "parity_bits", "overhead_ratio", "overhead_pct", "correctable_bits", "scheme"])
+
+    # --- Compute BCH honest-t data (min t for 95% system success under random errors) ---
+    import math as _math
+    n_blocks = _math.ceil(args.bit_length / 256)
+    bch_honest_rows: list[dict[str, Any]] = []
+    for t_expected in BCH_T_VALUES:
+        ber_implied = t_expected / 256.0
+        t_honest = bch_t_for_target_success(ber_implied, n_blocks, target_prob=0.95)
+        info = bch_overhead(args.bit_length, t_honest)
+        bch_honest_rows.append({
+            "t_expected": t_expected,
+            "t_honest": t_honest,
+            "ber_implied_pct": ber_implied * 100,
+            "overhead_pct": info["overhead_ratio"] * 100,
+            "correctable_bits": n_blocks * t_honest,
+        })
+        print(f"BCH honest t={t_honest:3d} (expected t={t_expected:3d}): "
+              f"overhead={info['overhead_ratio']:.1%}  correctable={n_blocks * t_honest}")
+
+    write_csv(os.path.join(args.out_dir, "fig2_bch_honest.csv"), bch_honest_rows,
+              ["t_expected", "t_honest", "ber_implied_pct", "overhead_pct", "correctable_bits"])
 
     # --- Run empirical trials for our scheme ---
     all_tasks: list[tuple] = []
@@ -190,12 +211,18 @@ def main() -> None:
     # Panel A: overhead % vs max correctable errors
     bch_xs = [r["correctable_bits"] for r in bch_rows]
     bch_ys = [r["overhead_pct"] for r in bch_rows]
-    ax1.plot(bch_xs, bch_ys, "s--", color="#d62728", linewidth=2, markersize=7, label="BCH (analytical upper bound)")
+    ax1.plot(bch_xs, bch_ys, "s--", color="#d62728", linewidth=2, markersize=7,
+             label="BCH (theoretical upper bound — 0% actual success for large L)")
     for r in bch_rows:
         if r["t"] in {10, 50, 100, 200}:
             ax1.annotate(f"t={r['t']}\n{r['overhead_pct']:.0f}%",
                          xy=(r["correctable_bits"], r["overhead_pct"]),
                          xytext=(8, 4), textcoords="offset points", fontsize=7, color="#d62728")
+
+    bch_honest_xs = [r["correctable_bits"] for r in bch_honest_rows]
+    bch_honest_ys = [r["overhead_pct"] for r in bch_honest_rows]
+    ax1.plot(bch_honest_xs, bch_honest_ys, "^-", color="#4a1486", linewidth=2, markersize=7,
+             label="BCH (honest-t for 95% success under random flips)")
 
     marker_styles = ["o", "^", "D", "v"]
     colors = ["#377eb8", "#4daf4a", "#984ea3", "#ff7f00"]
@@ -220,7 +247,13 @@ def main() -> None:
     bch_eff_xs = [r["correctable_bits"] for r in bch_rows]
     bch_eff_ys = [r["correctable_bits"] / r["overhead_pct"] for r in bch_rows]
     ax2.plot(bch_eff_xs, bch_eff_ys, "s--", color="#d62728", linewidth=2, markersize=7,
-             label="BCH (analytical)")
+             label="BCH (theoretical upper bound)")
+
+    bch_honest_eff_xs = [r["correctable_bits"] for r in bch_honest_rows]
+    bch_honest_eff_ys = [r["correctable_bits"] / r["overhead_pct"] if r["overhead_pct"] > 0 else 0
+                         for r in bch_honest_rows]
+    ax2.plot(bch_honest_eff_xs, bch_honest_eff_ys, "^-", color="#4a1486", linewidth=2, markersize=7,
+             label="BCH (honest-t, 95% success)")
 
     for i, op in enumerate(our_operating_points):
         if op["max_correctable"] == 0 or op["overhead_pct"] == 0:

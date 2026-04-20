@@ -27,6 +27,10 @@ env/
 results/
 dag_viz/
 
+# Datasets
+data/
+*.tar.gz
+
 # OS noise
 .DS_Store
 Thumbs.db

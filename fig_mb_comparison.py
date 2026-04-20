@@ -15,7 +15,7 @@ import math
 import os
 
 from experiments.common import compute_overhead_ratio, ensure_dir
-from experiments.ecc_comparison import bch_overhead
+from experiments.ecc_comparison import bch_overhead, bch_t_for_target_success
 
 OUT_DIR = "results/fig_mb"
 DATA_BITS = 1024 * 1024 * 8  # 1 MB
@@ -49,11 +49,22 @@ def our_overhead_pct(bit_length: int, hash_bits: int) -> float:
 
 
 def bch_overhead_pct(bit_length: int, ber_pct: float) -> float | None:
-    t = max(1, round(ber_pct / 100 * bit_length))
-    if t == 0:
-        return None
-    info = bch_overhead(bit_length, t)
+    # t is errors per 256-bit sub-block (tiling model), NOT total errors in bit_length.
+    # BCH overhead ratio is constant in block size once you tile BCH(256, t) codewords.
+    t = max(1, round(ber_pct / 100 * 256))
+    info = bch_overhead(256, t)
     return info["overhead_ratio"] * 100
+
+
+def bch_overhead_pct_honest(bit_length: int, ber_pct: float, target: float = 0.95) -> float:
+    """BCH overhead for 256-bit tiling at the t required for `target` system success rate.
+
+    Unlike bch_overhead_pct(), this increases with bit_length: more sub-blocks demand
+    higher per-block reliability to hit the system-level target.
+    """
+    n_blocks = math.ceil(bit_length / 256)
+    t = bch_t_for_target_success(ber_pct / 100.0, n_blocks, target_prob=target)
+    return bch_overhead(256, t)["overhead_ratio"] * 100
 
 
 def crossover_ber(bit_length: int, hash_bits: int) -> float:
@@ -94,20 +105,19 @@ def main() -> None:
     bers = [BER_MIN * (BER_MAX / BER_MIN) ** (i / (BER_POINTS - 1))
             for i in range(BER_POINTS)]
 
-    bch_overheads = []
-    for ber in bers:
-        t = max(1, round(ber / 100 * DATA_BITS))
-        info = bch_overhead(DATA_BITS, t)
-        bch_overheads.append(info["overhead_ratio"] * 100)
+    bch_overheads = [bch_overhead_pct(DATA_BITS, ber) for ber in bers]
+    bch_honest_overheads = [bch_overhead_pct_honest(DATA_BITS, ber) for ber in bers]
 
     our_pcts = {hb: our_overhead_pct(DATA_BITS, hb) for hb, _, _ in OUR_CONFIGS}
     crossovers = {hb: exact_crossover_ber(DATA_BITS, hb) for hb, _, _ in OUR_CONFIGS}
 
     # ── Panel B data ────────────────────────────────────────────────────────
     bch_scale = []
+    bch_honest_scale = []
     for bs in BLOCK_SIZES:
         pct = bch_overhead_pct(bs, BER_FIXED)
         bch_scale.append(pct if pct is not None else float("nan"))
+        bch_honest_scale.append(bch_overhead_pct_honest(bs, BER_FIXED))
 
     our_scale = {
         hb: [our_overhead_pct(bs, hb) for bs in BLOCK_SIZES]
@@ -123,7 +133,10 @@ def main() -> None:
 
     # --- Panel A: overhead vs BER at 1 MB ---
     ax1.plot(bers, bch_overheads,
-             color="#d62728", linewidth=2.5, label="BCH (exact cyclotomic cosets)")
+             color="#d62728", linewidth=2.5, label="BCH (expected-t, constant overhead)")
+    ax1.plot(bers, bch_honest_overheads,
+             color="#4a1486", linewidth=2.5, linestyle="--",
+             label="BCH (honest-t, 95% success — rises with L)")
 
     for hash_bits, color, label in OUR_CONFIGS:
         pct = our_pcts[hash_bits]
@@ -171,7 +184,10 @@ def main() -> None:
     bs_bits = BLOCK_SIZES
     ax2.plot(bs_bits, bch_scale,
              color="#d62728", linewidth=2.5, marker="s", markersize=6,
-             label=f"BCH  (BER = {BER_FIXED}%)")
+             label=f"BCH expected-t  (BER = {BER_FIXED}%)")
+    ax2.plot(bs_bits, bch_honest_scale,
+             color="#4a1486", linewidth=2.5, linestyle="--", marker="D", markersize=6,
+             label=f"BCH honest-t 95% success  (BER = {BER_FIXED}%)")
 
     for hash_bits, color, label in OUR_CONFIGS:
         ax2.plot(bs_bits, our_scale[hash_bits],
@@ -206,18 +222,18 @@ def main() -> None:
     print(f"Saved: {out_path}")
 
     # ── Print summary table ─────────────────────────────────────────────────
-    print(f"\n{'BER':>10}  {'t (flips)':>12}  {'BCH overhead':>14}", end="")
+    print(f"\n{'BER':>10}  {'t/block':>8}  {'BCH OH':>10}  {'BCH honest OH':>14}", end="")
     for hb, _, _ in OUR_CONFIGS:
-        print(f"  {'Ours '+str(hb)+'b':>14}", end="")
+        print(f"  {'Ours '+str(hb)+'b':>12}", end="")
     print()
-    print("-" * (10 + 14 + 14 + len(OUR_CONFIGS) * 16 + 4))
+    print("-" * (10 + 10 + 12 + 16 + len(OUR_CONFIGS) * 14 + 4))
     for ber in [0.001, 0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0]:
-        t = max(1, round(ber / 100 * DATA_BITS))
-        info = bch_overhead(DATA_BITS, t)
-        bch_pct = info["overhead_ratio"] * 100
-        print(f"{ber:>9.3f}%  {t:>12,}  {bch_pct:>13.3f}%", end="")
+        t = max(1, round(ber / 100 * 256))
+        bch_pct = bch_overhead(256, t)["overhead_ratio"] * 100
+        bch_honest_pct = bch_overhead_pct_honest(DATA_BITS, ber)
+        print(f"{ber:>9.3f}%  {t:>8}  {bch_pct:>9.3f}%  {bch_honest_pct:>13.3f}%", end="")
         for hb, _, _ in OUR_CONFIGS:
-            print(f"  {our_pcts[hb]:>13.3f}%", end="")
+            print(f"  {our_pcts[hb]:>11.3f}%", end="")
         print()
 
     print("\nCrossover BERs (BCH overhead = our overhead):")

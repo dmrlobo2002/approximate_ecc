@@ -32,7 +32,10 @@ import os
 from typing import Optional
 
 from experiments.common import compute_overhead_ratio, ensure_dir
-from experiments.ecc_comparison import bch_overhead as _bch_overhead
+from experiments.ecc_comparison import (
+    bch_overhead as _bch_overhead,
+    bch_t_for_target_success,
+)
 
 # ── Config space ──────────────────────────────────────────────────────────────
 HASH_BITS_LIST = [8, 16, 32]
@@ -47,10 +50,12 @@ BER_POINTS         = 300
 # ── Visual style ──────────────────────────────────────────────────────────────
 CONFIG_COLORS   = {8: "#e41a1c", 16: "#377eb8", 32: "#4daf4a"}
 GROUP_LINESTYLE = {1: "-", 2: "--", 4: ":"}
-BCH_COLOR       = "#8c2d04"   # dark red
-RS_COLOR        = "#f16913"   # orange
-BCH_LS          = "-"
-RS_LS           = "-."
+BCH_COLOR        = "#8c2d04"   # dark red
+BCH_HONEST_COLOR = "#4a1486"   # dark purple — honest-t (95% success)
+RS_COLOR         = "#f16913"   # orange
+BCH_LS           = "-"
+BCH_HONEST_LS    = "--"
+RS_LS            = "-."
 
 
 # ── Analytical overhead functions ─────────────────────────────────────────────
@@ -81,6 +86,17 @@ def rs_overhead_ratio(L: int, ber: float, symbol_bits: int = 8) -> float:
     if data_sym <= 0:
         return 2.5
     return min((2 * t) / data_sym, 2.5)
+
+
+def bch_overhead_ratio_honest(L: int, ber: float, target: float = 0.95) -> float:
+    """BCH overhead using honest-t: min t for 95% system success under random errors.
+
+    Unlike bch_overhead_ratio(), this INCREASES with L because more 256-bit sub-blocks
+    demand higher per-block reliability to hit the system-level target.
+    """
+    n_blocks = math.ceil(L / 256)
+    t = bch_t_for_target_success(ber, n_blocks, target_prob=target)
+    return min(_bch_overhead(256, t)["overhead_ratio"], 2.5)
 
 
 def our_overhead_ratio(L: int, h: int, g: int) -> float:
@@ -114,6 +130,31 @@ def crossover_ber(L: int, h: int, g: int, ref: str = "bch") -> Optional[float]:
     return (lo + hi) / 2
 
 
+def crossover_ber_honest(
+    L: int, h: int, g: int, target: float = 0.95
+) -> Optional[float]:
+    """Binary-search crossover BER for honest BCH (95% success target).
+
+    Returns BER above which our scheme has lower overhead than honest BCH,
+    or None if honest BCH is always cheaper.
+    """
+    our = our_overhead_ratio(L, h, g)
+    hi_ber = 0.9999
+    if bch_overhead_ratio_honest(L, hi_ber, target) < our:
+        return None
+    lo_ber = 1e-6
+    if bch_overhead_ratio_honest(L, lo_ber, target) >= our:
+        return lo_ber
+    lo, hi = lo_ber, hi_ber
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        if bch_overhead_ratio_honest(L, mid, target) < our:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Overhead crossover: Approximate ECC vs BCH and Reed-Solomon"
@@ -132,17 +173,19 @@ def main() -> None:
 
     # Always print the crossover table
     print(f"\n{'L':>6}  {'h':>3}  {'g':>2}  {'our OH':>8}  "
-          f"{'BCH cross':>10}  {'RS cross':>10}")
-    print("-" * 50)
+          f"{'BCH cross':>10}  {'BCH honest':>11}  {'RS cross':>10}")
+    print("-" * 62)
     for L in BLOCK_SIZES_SWEEP:
         for h in HASH_BITS_LIST:
             for g in GROUP_SIZES:
                 our = our_overhead_ratio(L, h, g)
                 cx_b = crossover_ber(L, h, g, "bch")
+                cx_bh = crossover_ber_honest(L, h, g)
                 cx_r = crossover_ber(L, h, g, "rs")
-                b_str = f"{cx_b:.2%}" if cx_b is not None else "never"
-                r_str = f"{cx_r:.2%}" if cx_r is not None else "never"
-                print(f"{L:>6}  {h:>3}  {g:>2}  {our:>7.1%}  {b_str:>10}  {r_str:>10}")
+                b_str  = f"{cx_b:.2%}"  if cx_b  is not None else "never"
+                bh_str = f"{cx_bh:.2%}" if cx_bh is not None else "never"
+                r_str  = f"{cx_r:.2%}"  if cx_r  is not None else "never"
+                print(f"{L:>6}  {h:>3}  {g:>2}  {our:>7.1%}  {b_str:>10}  {bh_str:>11}  {r_str:>10}")
 
     if args.no_plot:
         return
@@ -172,10 +215,14 @@ def main() -> None:
     for col, L in enumerate(BLOCK_SIZES_ROW0):
         ax = axes[0][col]
 
-        bch_ys = [bch_overhead_ratio(L, b) * 100 for b in bers]
-        rs_ys  = [rs_overhead_ratio(L, b)  * 100 for b in bers]
+        bch_ys        = [bch_overhead_ratio(L, b)        * 100 for b in bers]
+        bch_honest_ys = [bch_overhead_ratio_honest(L, b) * 100 for b in bers]
+        rs_ys         = [rs_overhead_ratio(L, b)         * 100 for b in bers]
         ax.plot(bers, bch_ys, color=BCH_COLOR, linewidth=2.5, linestyle=BCH_LS,
-                label="BCH", zorder=4)
+                label="BCH (expected-t)", zorder=4)
+        ax.plot(bers, bch_honest_ys, color=BCH_HONEST_COLOR, linewidth=2.0,
+                linestyle=BCH_HONEST_LS,
+                label="BCH (95%-success honest-t)" if col == 0 else None, zorder=4)
         ax.plot(bers, rs_ys,  color=RS_COLOR,  linewidth=2.5, linestyle=RS_LS,
                 label="RS (GF 2⁸)", zorder=4)
 
@@ -220,10 +267,14 @@ def main() -> None:
     for col, ber in enumerate(BER_VALUES_ROW1):
         ax = axes[1][col]
 
-        bch_ys = [bch_overhead_ratio(L, ber) * 100 for L in Ls_sweep]
-        rs_ys  = [rs_overhead_ratio(L, ber)  * 100 for L in Ls_sweep]
+        bch_ys        = [bch_overhead_ratio(L, ber)        * 100 for L in Ls_sweep]
+        bch_honest_ys = [bch_overhead_ratio_honest(L, ber) * 100 for L in Ls_sweep]
+        rs_ys         = [rs_overhead_ratio(L, ber)         * 100 for L in Ls_sweep]
         ax.plot(Ls_sweep, bch_ys, color=BCH_COLOR, linewidth=2.5,
-                linestyle=BCH_LS, marker="s", markersize=4, label="BCH", zorder=4)
+                linestyle=BCH_LS, marker="s", markersize=4, label="BCH (expected-t)", zorder=4)
+        ax.plot(Ls_sweep, bch_honest_ys, color=BCH_HONEST_COLOR, linewidth=2.0,
+                linestyle=BCH_HONEST_LS, marker="D", markersize=4,
+                label="BCH (95%-success honest-t)" if col == 0 else None, zorder=4)
         ax.plot(Ls_sweep, rs_ys,  color=RS_COLOR,  linewidth=2.5,
                 linestyle=RS_LS,  marker="^", markersize=4,
                 label="RS (GF 2⁸)", zorder=4)
@@ -275,7 +326,7 @@ def main() -> None:
         for h in HASH_BITS_LIST:
             color = CONFIG_COLORS[h]
             for ref, ls, mk, lbl_sfx in [
-                ("bch", "-",  "o", "vs BCH"),
+                ("bch", "-",  "o", "vs BCH (expected-t)"),
                 ("rs",  "--", "s", "vs RS"),
             ]:
                 xs, ys = [], []
@@ -288,6 +339,18 @@ def main() -> None:
                     ax.plot(xs, ys, color=color, linestyle=ls, linewidth=1.8,
                             marker=mk, markersize=4,
                             label=f"h={h} {lbl_sfx}")
+
+            # Honest BCH crossover (95%-success target)
+            xs_h, ys_h = [], []
+            for L in Ls_sweep:
+                cx_h = crossover_ber_honest(L, h, g)
+                if cx_h is not None:
+                    xs_h.append(L)
+                    ys_h.append(cx_h * 100)
+            if xs_h:
+                ax.plot(xs_h, ys_h, color=color, linestyle=":", linewidth=1.8,
+                        marker="D", markersize=4,
+                        label=f"h={h} vs BCH (honest-t)")
 
         ax.set_xscale("log", base=2)
         ax.set_xlabel("Block size (bits)", fontsize=9)
