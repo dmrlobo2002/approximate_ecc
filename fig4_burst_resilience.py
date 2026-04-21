@@ -33,7 +33,7 @@ DEFAULT_BIT_LENGTH = 4096
 DEFAULT_MAX_BER = 0.06
 DEFAULT_KEYS = 30
 DEFAULT_ROUNDS = 8
-HASH_BITS = 16
+DEFAULT_HASH_BITS = 32
 GROUP_SIZE = 1
 
 
@@ -45,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-ber", type=float, default=DEFAULT_MAX_BER)
     p.add_argument("--keys", type=int, default=DEFAULT_KEYS)
     p.add_argument("--rounds", type=int, default=DEFAULT_ROUNDS)
+    p.add_argument("--hash-bits", type=int, default=DEFAULT_HASH_BITS)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out-dir", type=str, default="results/fig4")
     p.add_argument("--no-plot", action="store_true")
@@ -57,6 +58,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    HASH_BITS = args.hash_bits
     max_flip_count = max(1, int(args.max_ber * args.bit_length))
     flip_counts = list(range(10, max_flip_count + 1, 10))
     if flip_counts[-1] != max_flip_count:

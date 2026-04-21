@@ -30,7 +30,7 @@ DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
 DEFAULT_KEYS = 20
 DEFAULT_BER = 0.05
 DEFAULT_ROUNDS = 8
-HASH_BITS = 16
+DEFAULT_HASH_BITS = 32
 GROUP_SIZE = 1
 BCH_T_VALUES = [10, 50, 100, 200]
 
@@ -43,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--ber", type=float, default=DEFAULT_BER)
     p.add_argument("--keys", type=int, default=DEFAULT_KEYS)
     p.add_argument("--rounds", type=int, default=DEFAULT_ROUNDS)
+    p.add_argument("--hash-bits", type=int, default=DEFAULT_HASH_BITS)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out-dir", type=str, default="results/fig3")
     p.add_argument("--no-plot", action="store_true")
@@ -55,6 +56,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    HASH_BITS = args.hash_bits
     bit_lengths = parse_int_list(args.bit_lengths)
     if not bit_lengths:
         raise ValueError("--bit-lengths must be non-empty")

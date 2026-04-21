@@ -28,7 +28,7 @@ from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
 DEFAULT_BER_VALUES = [0.01, 0.02, 0.05, 0.08, 0.10, 0.15]
-DEFAULT_HASH_BITS = 16
+DEFAULT_HASH_BITS = 32
 DEFAULT_KEYS = 20
 DEFAULT_ROUNDS = 8
 
