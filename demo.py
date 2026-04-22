@@ -6,6 +6,7 @@ import argparse
 import random
 
 from bitflip_solver import correct_with_dag, correct_without_golden
+from experiments.common import stable_key
 from grid_shuffle import bits_to_grid, grid_to_bits, source_index_to_grid_coord
 from group_hash import build_hash_nodes
 from hash_dag import build_hash_graph
@@ -14,13 +15,13 @@ from hash_dag import build_hash_graph
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Feistel-grid CRC DAG bitflip correction demo")
     parser.add_argument("--bit-length", type=int, default=4096, help="Number of source bits L")
-    parser.add_argument("--key", type=str, default="demo-key-123", help="Feistel key string")
+    parser.add_argument("--key-id", type=int, default=0, help="Key ID passed to stable_key(seed, key_id)")
     parser.add_argument("--rounds", type=int, default=8, help="Feistel rounds")
     parser.add_argument("--row-group-size", type=int, default=1, help="Non-overlapping row group size")
     parser.add_argument("--col-group-size", type=int, default=1, help="Non-overlapping column group size")
     parser.add_argument("--row-splits", type=int, default=1, help="Split each row hash node into N column sub-ranges")
     parser.add_argument("--col-splits", type=int, default=1, help="Split each col hash node into N row sub-ranges")
-    parser.add_argument("--hash-bits", type=int, default=16, help="Hash bit-width (8/16/32 for CRC; any positive int for simhash)")
+    parser.add_argument("--hash-bits", type=int, default=32, help="Hash bit-width (8/16/32/64 for CRC; any positive int for simhash)")
     parser.add_argument("--hash-type", choices=["crc", "simhash"], default="crc", help="Hash scheme")
     parser.add_argument("--tail-policy", choices=["include_partial", "pad_with_zeros", "drop_partial"], default="include_partial")
     parser.add_argument("--flip-count", type=int, default=2, help="Number of random source-bit flips to inject")
@@ -45,10 +46,10 @@ def main() -> None:
     args = parse_args()
     if args.bit_length <= 0:
         raise ValueError("--bit-length must be positive")
-    if args.hash_type == "crc" and args.hash_bits not in {8, 16, 32}:
-        raise ValueError("--hash-bits must be 8, 16, or 32 for CRC")
+    if args.hash_type == "crc" and args.hash_bits not in {8, 16, 32, 64}:
+        raise ValueError("--hash-bits must be 8, 16, 32, or 64 for CRC")
 
-    key = args.key.encode("utf-8")
+    key = stable_key(args.seed, args.key_id)
     bits = [(i * 3 + 1) % 2 for i in range(args.bit_length)]
     baseline_grid, meta = bits_to_grid(bits, key=key, rounds=args.rounds)
 
