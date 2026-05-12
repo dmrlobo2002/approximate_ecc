@@ -1,0 +1,55 @@
+\chapter*{System Design}
+The [ACRONYM] system comprises the following components:
+
+\begin{enumerate}
+
+    \item \textbf{Feistel Permutation Module}
+        \begin{enumerate}
+            \item Implements an $R$-round balanced Feistel network ($R=8$ by default) with SHA-256 as the round function, keyed by a 16-byte secret key $K$.
+            \item Employs the cycle-walking technique to produce a bijective permutation $\pi$ on the integer domain $\{0, \ldots, L-1\}$ for any block length $L$.
+            \item Provides both the forward permutation (used during encoding and decoding grid reconstruction) and the inverse permutation $\pi^{-1}$ (used to recover source bit order from the corrected grid).
+            \item Software implementation: pure Python and C++ (pybind11 extension). Hardware implementation: $R$-stage pipelined combinational logic with SHA-256 core and cycle-walk controller.
+        \end{enumerate}
+
+    \item \textbf{Grid Layout Module}
+        \begin{enumerate}
+            \item Accepts the permuted bit array and maps it to an $N \times N$ grid in row-major order, where $N = \lceil\sqrt{L}\rceil$.
+            \item Maintains bidirectional index maps: \texttt{source\_to\_grid[i]} $\mapsto (r, c)$ and \texttt{grid\_to\_source[(r,c)]} $\mapsto i$, derived deterministically from $\pi$ and $N$.
+            \item Applies zero-padding to grid positions $L$ through $N^2 - 1$ when $L$ is not a perfect square.
+        \end{enumerate}
+
+    \item \textbf{Hash Computation Module}
+        \begin{enumerate}
+            \item Computes CRC digests over each row group and each column group of the grid using a configurable hash function (CRC-8/16/32/64 or GF(2) SimHash) and group size $s$.
+            \item Produces $2\lceil N/s \rceil$ hash nodes, each carrying its node identifier, axis, covered source indices, and digest value.
+            \item Hardware implementation: $N$ parallel CRC units for row groups and $N$ parallel CRC units for column groups, computing all $2N$ digests simultaneously in a single streaming pass over the grid data.
+        \end{enumerate}
+
+    \item \textbf{Metadata Storage}
+        \begin{enumerate}
+            \item Stores the $2\lceil N/s \rceil \cdot h$ bits of hash metadata in a dedicated region co-located with the data block (e.g., a spare-area sector in flash, an ECC sideband in DRAM).
+            \item Metadata region is assumed to be separately protected (e.g., by a simple parity code) to ensure digest integrity.
+        \end{enumerate}
+
+    \item \textbf{Constraint Graph Module}
+        \begin{enumerate}
+            \item Constructs the bipartite constraint graph $K_{N,N}$ from the set of hash nodes: an edge between row node $r_i$ and column node $c_j$ with weight 1, representing the unique grid cell at position $(i, j)$.
+            \item Maintains and updates matched/mismatched labels for all nodes during decoding.
+            \item Provides neighbor queries: given a node, returns its matched neighbors and mismatched neighbors for use by the solver.
+        \end{enumerate}
+
+    \item \textbf{Constraint-Guided Bit-Flip Solver}
+        \begin{enumerate}
+            \item Implements the greedy flip-level climbing algorithm: selects mismatched nodes in ascending covered-bit-count order; for each node, computes intersection, free, and pinned index sets via matched-neighbor pinning; enumerates flip combinations of increasing size $k$; commits the highest-scoring combination.
+            \item Outer loop: repeats over all mismatched nodes until all are matched or no progress is achievable; increments the flip-level ceiling when no improvement is found.
+            \item Software implementation: pure Python and C++ (pybind11). Hardware implementation: priority queue for node ordering, combinatorial enumeration unit, parallel CRC recomputation for affected nodes, global score accumulator.
+        \end{enumerate}
+
+    \item \textbf{System Integration}
+        \begin{enumerate}
+            \item On a \textbf{write} operation: source data $\rightarrow$ Feistel permutation $\rightarrow$ grid layout $\rightarrow$ hash computation $\rightarrow$ store data + metadata.
+            \item On a \textbf{read} operation: retrieve data + metadata $\rightarrow$ Feistel permutation $\rightarrow$ grid layout $\rightarrow$ hash recomputation $\rightarrow$ constraint graph $\rightarrow$ solver $\rightarrow$ inverse permutation $\rightarrow$ corrected data.
+            \item The encoder and decoder share only the key $K$ and the block length $L$; no other state is required.
+        \end{enumerate}
+
+\end{enumerate}

@@ -1,0 +1,103 @@
+\chapter*{Algorithm}
+\noindent
+
+The [ACRONYM] encoding and decoding algorithms are presented below. Algorithm~\ref{alg:encode} describes the encoding procedure and Algorithm~\ref{alg:decode} describes the decoding procedure including the constraint-guided bit-flip search.
+
+\begin{algorithm}
+\caption{[ACRONYM] Encoder}
+\label{alg:encode}
+\begin{algorithmic}[1]
+\Require Data block $B[0 \ldots L-1]$, key $K$, hash width $h$, group size $s$
+\Ensure Metadata $\mathcal{H} = \{(node\_id, digest)\}$
+
+\State $N \leftarrow \lceil\sqrt{L}\rceil$
+
+\Comment{Step 1: Feistel Permutation}
+\For{$i \leftarrow 0$ to $L-1$}
+    \State $B'[\pi_K(i)] \leftarrow B[i]$ \Comment{Apply 8-round keyed Feistel with cycle-walking}
+\EndFor
+
+\Comment{Step 2: Grid Layout}
+\For{$r \leftarrow 0$ to $N-1$, $c \leftarrow 0$ to $N-1$}
+    \State $G[r][c] \leftarrow B'[r \cdot N + c]$ \text{ if } $r \cdot N + c < L$, else $0$
+\EndFor
+
+\Comment{Step 3: Row Hash Nodes}
+\For{$g \leftarrow 0$ to $\lceil N/s \rceil - 1$}
+    \State $\text{rows} \leftarrow \{g \cdot s, \ldots, \min((g+1)s-1, N-1)\}$
+    \State $\text{bits} \leftarrow \{G[r][c] : r \in \text{rows}, c \in \{0,\ldots,N-1\}\}$ (serialized)
+    \State $\mathcal{H}[\text{``row\_}g\text{''}] \leftarrow \text{CRC}_h(\text{bits})$
+\EndFor
+
+\Comment{Step 4: Column Hash Nodes}
+\For{$g \leftarrow 0$ to $\lceil N/s \rceil - 1$}
+    \State $\text{cols} \leftarrow \{g \cdot s, \ldots, \min((g+1)s-1, N-1)\}$
+    \State $\text{bits} \leftarrow \{G[r][c] : c \in \text{cols}, r \in \{0,\ldots,N-1\}\}$ (serialized)
+    \State $\mathcal{H}[\text{``col\_}g\text{''}] \leftarrow \text{CRC}_h(\text{bits})$
+\EndFor
+
+\State \Return $\mathcal{H}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{[ACRONYM] Decoder}
+\label{alg:decode}
+\begin{algorithmic}[1]
+\Require Received block $B_r[0\ldots L-1]$, metadata $\mathcal{H}$, key $K$, hash width $h$, group size $s$
+\Ensure Corrected block $\hat{B}[0\ldots L-1]$
+
+\State Construct grid $G_r$ from $B_r$ using $\pi_K$ (same as encoder Steps 1--2)
+\State Recompute all row and column digests over $G_r$
+
+\Comment{Identify mismatched nodes}
+\State $\mathcal{U} \leftarrow \{n : \text{recomputed digest}(n) \neq \mathcal{H}[n]\}$ \Comment{mismatched}
+\State $\mathcal{A} \leftarrow V \setminus \mathcal{U}$ \Comment{matched}
+
+\If{$\mathcal{U} = \emptyset$} \Return $B_r$ \EndIf
+
+\Comment{Build constraint graph (bipartite $K_{N,N}$ for $s=1$)}
+\State Construct $G_C = (V, E)$ with edges between overlapping nodes
+
+\Comment{Outer iteration: repeat until no mismatched nodes or no progress}
+\Repeat
+    \State $\text{progress} \leftarrow \text{false}$
+    \State Sort $\mathcal{U}$ by $|\text{covered\_indices}|$ ascending (then by $|\mathcal{X}(u)|$ ascending)
+    \For{each mismatched node $u \in \mathcal{U}$ in sorted order}
+        \Comment{Collect candidate indices with pinning}
+        \State $I(u) \leftarrow \text{covered}(u) \cap \bigcup_{v \in \mathcal{X}(u)} \text{covered}(v)$ \Comment{intersection}
+        \State $P(u) \leftarrow \text{covered}(u) \cap \bigcup_{v \in \mathcal{A}(u)} \text{covered}(v)$ \Comment{pinned (excluded)}
+        \State $F(u) \leftarrow \text{covered}(u) \setminus (I(u) \cup P(u))$ \Comment{free}
+        \State $\mathcal{C}(u) \leftarrow I(u) \cup F(u)$
+        \Comment{Flip-level search}
+        \State $\text{best\_score} \leftarrow |\mathcal{A}|$, $\text{best\_combo} \leftarrow \emptyset$
+        \For{$k \leftarrow 1$ to $k_{\max}$}
+            \For{each combination $\mathcal{F} \subseteq \mathcal{C}(u)$ with $|\mathcal{F}| = k$}
+                \State Apply flips $\mathcal{F}$ tentatively to $G_r$
+                \State Recompute digests for all nodes $v$ s.t. $\text{covered}(v) \cap \mathcal{F} \neq \emptyset$
+                \State $\text{score} \leftarrow |\{v \in V : \text{recomputed}(v) = \mathcal{H}[v]\}|$
+                \If{$\text{score} > \text{best\_score}$}
+                    \State $\text{best\_score} \leftarrow \text{score}$, $\text{best\_combo} \leftarrow \mathcal{F}$
+                \EndIf
+                \State Revert tentative flips
+            \EndFor
+            \If{$\text{best\_combo} \neq \emptyset$} \textbf{break} \EndIf
+        \EndFor
+        \If{$\text{best\_combo} \neq \emptyset$}
+            \State Commit flips $\text{best\_combo}$ to $G_r$
+            \State Update $\mathcal{A}$ and $\mathcal{U}$ based on newly matched/unmatched nodes
+            \State $\text{progress} \leftarrow \text{true}$
+        \EndIf
+    \EndFor
+\Until{$\mathcal{U} = \emptyset$ \textbf{ or not} progress}
+
+\Comment{Invert permutation to recover source bits}
+\For{$(r, c)$ in $G_r$}
+    \State $\hat{B}[\pi_K^{-1}(r \cdot N + c)] \leftarrow G_r[r][c]$
+\EndFor
+
+\State \Return $\hat{B}$
+\end{algorithmic}
+\end{algorithm}
+
+\noindent\textbf{Complexity.} Encoding requires $O(L)$ time for the Feistel permutation and $O(L)$ time for all CRC computations (each of the $2N$ digests covers $O(N)$ bits, and $2N \cdot N = 2N^2 \approx 2L$). Decoding requires $O(|\mathcal{C}(u)|^k)$ hash evaluations per node per flip level $k$, where $|\mathcal{C}(u)|$ is reduced significantly by matched-neighbor pinning. Empirically, at 5\% BER on 4,096-bit blocks, the total number of CRC evaluations is in the range $10^4$--$10^5$.

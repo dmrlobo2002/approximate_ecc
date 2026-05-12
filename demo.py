@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--col-splits", type=int, default=1, help="Split each col hash node into N row sub-ranges")
     parser.add_argument("--hash-bits", type=int, default=32, help="Hash bit-width (8/16/32/64 for CRC; any positive int for simhash)")
     parser.add_argument("--hash-type", choices=["crc", "simhash"], default="crc", help="Hash scheme")
-    parser.add_argument("--tail-policy", choices=["include_partial", "pad_with_zeros", "drop_partial"], default="include_partial")
+    parser.add_argument("--tail-policy", choices=["include_partial", "pad_with_zeros", "drop_partial"], default="pad_with_zeros", help="How to handle partial groups when bit-length is not divisible by group size")
     parser.add_argument("--flip-count", type=int, default=2, help="Number of random source-bit flips to inject")
     parser.add_argument(
         "--flip-indices",
@@ -35,6 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--viz", action="store_true", help="Render DAG PNG(s) colored by mismatched nodes")
     parser.add_argument("--viz-dir", type=str, default="dag_viz", help="Output directory for DAG PNGs")
     parser.add_argument("--viz-prefix", type=str, default="dag", help="Prefix for generated DAG PNG filenames")
+    parser.add_argument("--mirror-msbs", type=int, default=0, help="Duplicate the first N source bits into padding slots for extra MSB protection (0 = disabled)")
     parser.add_argument("--golden-bits", action="store_true", help="Use original (golden) bits for solver scoring; without this flag the solver uses only stored hashes")
     parser.add_argument("--max-flips", type=int, default=2, help="Max flips tried per node (correct_without_golden path only)")
     parser.add_argument("--max-combos", type=int, default=None, help="Global combo budget cap (correct_with_dag path only; None = unlimited)")
@@ -51,7 +52,7 @@ def main() -> None:
 
     key = stable_key(args.seed, args.key_id)
     bits = [(i * 3 + 1) % 2 for i in range(args.bit_length)]
-    baseline_grid, meta = bits_to_grid(bits, key=key, rounds=args.rounds)
+    baseline_grid, meta = bits_to_grid(bits, key=key, rounds=args.rounds, mirror_msbs=args.mirror_msbs)
 
     current_grid = [row[:] for row in baseline_grid]
     if args.flip_indices.strip():

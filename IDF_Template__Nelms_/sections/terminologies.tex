@@ -1,0 +1,20 @@
+\chapter*{Terminologies}
+\begin{itemize}
+    \item \textbf{[ACRONYM]} -- [Full expansion of acronym]; the error correction scheme disclosed herein.
+    \item \textbf{ECC} -- Error-Correcting Code; a scheme that adds redundant data to enable detection and correction of errors introduced during storage or transmission.
+    \item \textbf{BER} -- Bit Error Rate; the fraction of bits in a data block that are flipped due to noise or device faults.
+    \item \textbf{BCH} -- Bose-Chaudhuri-Hocquenghem; a class of algebraic cyclic error-correcting codes widely deployed in NAND flash and DRAM controllers.
+    \item \textbf{CRC} -- Cyclic Redundancy Check; a hash function based on polynomial division over GF(2), used in [ACRONYM] to compute row and column digest values.
+    \item \textbf{Feistel Network} -- A symmetric cipher construction composed of multiple rounds of alternating transformations; used in [ACRONYM] to implement the keyed invertible bit permutation.
+    \item \textbf{Cycle-Walking} -- A technique for extending a Feistel cipher to operate on integer domains of arbitrary (non-power-of-two) size by re-applying the cipher until the output falls within the target range.
+    \item \textbf{Hash Node} -- A node in the constraint graph of [ACRONYM] corresponding to a single CRC digest computation over a row group or column group of the 2D grid.
+    \item \textbf{Constraint Graph} -- A bipartite graph in [ACRONYM] where nodes represent hash digest computations and edges connect nodes whose covered bit sets overlap; used to guide the decoder.
+    \item \textbf{Matched / Mismatched Node} -- A hash node is \emph{matched} if its recomputed digest equals the stored digest (i.e., no uncorrected errors in its covered bits), and \emph{mismatched} otherwise.
+    \item \textbf{Matched-Neighbor Pinning} -- The pruning heuristic in [ACRONYM]'s decoder that excludes from the flip search any bits already covered by matched neighboring nodes, preventing the decoder from disrupting already-correct constraints.
+    \item \textbf{Flip-Level Climbing} -- The decoder strategy of enumerating flip combinations of increasing size ($k = 1, 2, 3, \ldots$) per mismatched node, committing the best combination at each level before advancing.
+    \item \textbf{GF(2)} -- The binary Galois field; arithmetic is performed modulo 2. BCH decoding requires arithmetic over extension fields $\text{GF}(2^m)$, which [ACRONYM] eliminates entirely.
+    \item \textbf{DRAM} -- Dynamic Random-Access Memory; the main memory technology in computers and AI accelerators, susceptible to bit-flip errors from cosmic rays, row-hammer, and voltage scaling.
+    \item \textbf{NAND Flash} -- A non-volatile storage technology used in SSDs and embedded systems; BER increases with program/erase cycle count and multi-level cell density.
+    \item \textbf{DNN} -- Deep Neural Network; a machine learning model composed of multiple layers of parameterized linear and non-linear operations, whose weight parameters are stored in memory and susceptible to bit-flip corruption.
+    \item \textbf{SimHash} -- A GF(2) random linear hash; an alternative to CRC in [ACRONYM] where each output bit is the parity of a random subset of input bits, providing the same false-positive rate ($2^{-h}$) as a CRC of width $h$.
+\end{itemize}

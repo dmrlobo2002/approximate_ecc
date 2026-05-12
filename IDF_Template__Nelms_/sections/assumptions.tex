@@ -1,0 +1,18 @@
+\section*{Assumptions}
+\noindent The following assumptions are made in the design and analysis of [ACRONYM].
+
+\begin{itemize}
+
+    \item \textbf{Shared Key:} The encoder and decoder share a secret key $K$ of at least 128 bits used to parameterize the Feistel permutation. This key is fixed at system configuration time and does not change across encode/decode operations for a given storage device or communication channel. In practice the key can be derived from a device-specific identifier or provisioned during manufacturing.
+
+    \item \textbf{Known Block Length:} The block length $L$ is known to both the encoder and decoder. In storage applications, $L$ is a fixed system parameter (e.g., the flash page size or DRAM burst length) and does not vary per block.
+
+    \item \textbf{Acceptable False Positive Rate:} The CRC hash functions used for digest computation have a false positive probability of $2^{-h}$ per hash node (e.g., $\approx 2.3 \times 10^{-10}$ for CRC-32). It is assumed that this rate is sufficiently low that accidental digest matches during decoding do not materially reduce correction success probability. This assumption is validated by empirical results showing $\geq$95\% correction success at 5\% BER with CRC-32.
+
+    \item \textbf{Independent Hash Nodes:} The row and column hash nodes provide independently distributed constraint information. This holds by construction because rows and columns partition the grid along orthogonal axes; a bit-flip affects exactly one row node and one column node, and the two digests are computed over disjoint sets of bits.
+
+    \item \textbf{Decoder Compute Budget:} The system has sufficient computational resources to execute the constraint-guided search within the required correction latency. Empirical measurements show that decoding a 4,096-bit block with 200 flips requires on the order of $10^4$--$10^5$ CRC evaluations, each requiring $O(N)$ operations. This is well within the capability of a dedicated hardware decoder or a software implementation on a modern processor.
+
+    \item \textbf{Metadata Integrity:} The stored hash digests are assumed to be protected from corruption (e.g., stored in a separate, lower-error region or protected by a simple parity code). If the metadata itself is corrupted, decoder behavior is undefined. In practice, metadata regions are typically more conservatively protected in storage systems.
+
+\end{itemize}

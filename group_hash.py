@@ -230,7 +230,7 @@ def build_group_context(
             col_node_row_ranges.append((r0, r1))
 
     src_to_node_ids: dict[int, tuple[str, ...]] = {}
-    for src_idx in range(meta.original_length):
+    for src_idx in range(meta.original_length + meta.mirror_count):
         linear = meta.source_to_grid[src_idx]
         r, c = linear // n, linear % n
         nids: list[str] = []
@@ -318,7 +318,7 @@ def build_hash_nodes(
                 for c in range(c_s0, c_s1):
                     bits.append(grid[r][c])
                     src_idx = meta.grid_to_source[r * n + c]
-                    if src_idx < meta.original_length:
+                    if src_idx < meta.original_length + meta.mirror_count:
                         source_indices.add(src_idx)
 
             if tail_policy == "pad_with_zeros" and (r1 - r0) < row_group_size:
@@ -351,7 +351,7 @@ def build_hash_nodes(
                 for r in range(r_s0, r_s1):
                     bits.append(grid[r][c])
                     src_idx = meta.grid_to_source[r * n + c]
-                    if src_idx < meta.original_length:
+                    if src_idx < meta.original_length + meta.mirror_count:
                         source_indices.add(src_idx)
 
             if tail_policy == "pad_with_zeros" and (c1 - c0) < col_group_size:

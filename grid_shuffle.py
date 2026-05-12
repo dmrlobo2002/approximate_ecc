@@ -16,6 +16,7 @@ class GridMeta:
     rounds: int
     source_to_grid: list[int]
     grid_to_source: list[int]
+    mirror_count: int = 0
 
 
 def normalize_bits(bits: list[int] | tuple[int, ...] | str) -> list[int]:
@@ -34,15 +35,16 @@ def normalize_bits(bits: list[int] | tuple[int, ...] | str) -> list[int]:
     return out
 
 
-def bits_to_grid(bits: list[int] | tuple[int, ...] | str, key: bytes, rounds: int = 8) -> tuple[list[list[int]], GridMeta]:
+def bits_to_grid(bits: list[int] | tuple[int, ...] | str, key: bytes, rounds: int = 8, mirror_msbs: int = 0) -> tuple[list[list[int]], GridMeta]:
     src = normalize_bits(bits)
     length = len(src)
     if length == 0:
         raise ValueError("input bits cannot be empty")
 
-    n = math.ceil(math.sqrt(length))
+    num_mirror = min(mirror_msbs, length)
+    n = math.ceil(math.sqrt(length + num_mirror))
     m = n * n
-    padded = src + [0] * (m - length)
+    padded = src + src[:num_mirror] + [0] * (m - length - num_mirror)
 
     grid_linear = [0] * m
     source_to_grid = [-1] * m
@@ -62,6 +64,7 @@ def bits_to_grid(bits: list[int] | tuple[int, ...] | str, key: bytes, rounds: in
         rounds=rounds,
         source_to_grid=source_to_grid,
         grid_to_source=grid_to_source,
+        mirror_count=num_mirror,
     )
     return grid, meta
 
@@ -77,7 +80,12 @@ def grid_to_bits(grid: list[list[int]], meta: GridMeta, key: bytes) -> list[int]
         src_idx = dst_idx if meta.rounds == 0 else invert_index(dst_idx, meta.m, key, rounds=meta.rounds)
         restored[src_idx] = bit
 
-    return restored[: meta.original_length]
+    result = restored[: meta.original_length]
+    for i in range(meta.mirror_count):
+        copy_val = restored[meta.original_length + i]
+        if result[i] != copy_val:
+            result[i] = copy_val
+    return result
 
 
 def source_index_to_grid_coord(source_idx: int, meta: GridMeta) -> tuple[int, int]:
