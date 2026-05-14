@@ -1,0 +1,52 @@
+\section*{Proposed Solution} \label{sec:solution}
+\noindent
+MECC addresses the four unmet requirements through a two-part invention.
+
+\subsection*{Part 1: Feistel-Permuted Grid Hash ECC (Primary Invention --- 80\%)}
+
+The core of MECC is a bit-flip detection and correction pipeline comprising three stages.
+
+\textbf{Stage 1 --- Feistel Permutation.}
+Given a flat bit array of length $L$ and a secret key $k$, a cycle-walking Feistel cipher maps each source index $i \in [0, L)$ to a unique grid coordinate $(r, c)$ in an $N \times N$ grid, where $N = \lceil\sqrt{L}\rceil$.
+The permutation uses SHA-256 as the round function.
+The key property is that adjacent source indices (which would form a burst in the original sequence) are mapped to geometrically distant grid positions, distributing burst errors uniformly and randomly across the grid.
+This equalization means the solver sees effectively random errors regardless of the original error pattern.
+
+\textbf{Stage 2 --- CRC Hash Graph.}
+Non-overlapping groups of consecutive rows and groups of consecutive columns of the permuted grid are each hashed using a CRC checksum (CRC-8, CRC-16, or CRC-32, selectable as a design parameter).
+Row-group hashes and column-group hashes together cover every cell in the grid: cell $(r, c)$ belongs to exactly one row-group hash and one column-group hash.
+Pairs of row and column hash nodes with overlapping source-index coverage are connected by undirected edges, weighted by the number of shared source bits, forming a bipartite hash graph.
+This graph encodes which hash nodes share source bits and can therefore help disambiguate each other during correction.
+
+\textbf{Stage 3 --- Coverage-Ordered Solver.}
+During correction, hash nodes are processed in order of increasing coverage (smallest number of source bits first).
+For each mismatched node, the solver enumerates all combinations of 0, 1, 2, \ldots flip counts within the node's covered source indices, evaluating each candidate by re-hashing and counting total matched nodes across the whole grid.
+The candidate that maximizes total matched nodes is accepted.
+Because small groups are processed first, the search space is narrow at each step, and corrections propagate forward to adjacent nodes through the graph edges.
+
+\textbf{Configurable overhead and scaling.}
+The total overhead is $(G_r + G_c) \cdot B / L$ bits, where $G_r$ and $G_c$ are the number of row and column groups and $B$ is the CRC width in bits.
+With groups of fixed size, $G_r \approx G_c \approx \sqrt{L}$, so overhead scales as $O(B\sqrt{L}/L) = O(1/\sqrt{L})$.
+As block size doubles, overhead fraction decreases by $\approx 30\%$.
+The CRC width and group size are independently tunable, allowing practitioners to dial in the desired tradeoff between correction capacity and storage cost.
+
+\subsection*{Part 2: Embedded Metadata Storage (Complementary Invention --- 20\%)}
+
+When the protected data consists of structured numeric values with representational degrees of freedom --- quantized neural network weights being the canonical example --- the CRC hash metadata need not be stored separately at all.
+
+The embedded variant co-optimizes the data values and the CRC bits jointly via a mixed-integer linear program (MILP):
+
+\begin{center}
+\textit{Minimize} $\displaystyle\sum_{i=1}^{W} |v_i - v_i^{\text{eff}}|$ \quad \textit{subject to:} CRC constraints are satisfied by the bit representation of $v_i^{\text{eff}}$.
+\end{center}
+
+The MILP finds a data value assignment $\{v_i^{\text{eff}}\}$ that satisfies all CRC parity constraints while minimizing the total distortion from the original values $\{v_i\}$.
+The result is that the CRC hash bits are ``hidden'' within small perturbations to the payload values, and the full correction capability of the hash graph is preserved.
+Effective storage overhead drops from $O(1/\sqrt{L})$ to near zero.
+
+A \textbf{hybrid scheme} partitions the CRC groups: some groups use embedded storage (zero overhead, small distortion), while groups covering the most sensitive data use explicit storage (small overhead, zero distortion).
+The fraction assigned to each mode is a configurable hyperparameter.
+This hybrid approach extends the range of achievable (overhead, distortion) operating points well beyond what either pure strategy can achieve.
+
+\textbf{Combined benefit.}
+The two-part invention enables a range of deployments: high-capacity error correction with $O(1/\sqrt{L})$ overhead for general-purpose storage, and near-zero overhead for distortion-tolerant applications such as edge neural network inference, where the payload naturally accommodates small value perturbations.

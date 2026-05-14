@@ -1,0 +1,58 @@
+\chapter*{Use Cases} \label{use_cases}
+\noindent
+
+\subsection*{1. Edge Neural Network Inference (Embedded Variant)}
+
+\textbf{Context:} Neural network models deployed on edge IoT devices (microcontrollers, embedded GPUs, FPGAs) store quantized weight tensors in on-chip SRAM or off-chip DRAM/NVM.
+Memory bit-flip rates increase with device aging, voltage scaling, and radiation exposure in harsh environments (automotive, aerospace, medical).
+
+\textbf{MECC application:} The embedded metadata variant embeds CRC hash bits directly into the weight values via MILP co-optimization.
+At zero storage overhead, the edge device stores a standard-sized weight file while retaining full MECC correction capability.
+When a bit flip corrupts a weight, the on-device solver runs the coverage-ordered correction pass and restores the affected weights before inference proceeds.
+The Feistel permutation ensures that burst errors from localized SRAM wear-out are equalized across the grid and corrected as reliably as isolated random errors.
+
+\textbf{Key benefit:} Zero additional SRAM required; inference accuracy is preserved under BER up to 5\%.
+
+\subsection*{2. NAND Flash Storage for Data Archiving}
+
+\textbf{Context:} NAND flash memory degrades with write/erase cycles, causing increasing bit-flip rates in stored pages over the device lifetime.
+Flash pages are typically 4 KB -- 16 KB; existing BCH or LDPC ECC controllers require dedicated out-of-band (OOB) storage that grows with error correction strength.
+
+\textbf{MECC application:} MECC with explicit CRC metadata is stored in the OOB region of each flash page.
+The $O(1/\sqrt{L})$ overhead scaling means that, for 16 KB pages ($L = 131,072$ bits), the same overhead budget that a BCH code uses to correct 50 errors can provide MECC correction of hundreds of errors.
+The Feistel permutation makes MECC robust to the bursty error patterns that dominate aged flash.
+
+\textbf{Key benefit:} Higher correction capacity per unit overhead than BCH for large page sizes; native burst-error resilience.
+
+\subsection*{3. DRAM Reliability in Safety-Critical Systems}
+
+\textbf{Context:} DRAM for automotive, avionics, and industrial control systems must meet strict reliability requirements (ISO 26262, DO-178C).
+Single-bit ECC DRAM is standard but insufficient against multi-bit upsets from radiation or voltage transients.
+Upgrading to multi-bit ECC doubles the DRAM footprint, which is often prohibitive.
+
+\textbf{MECC application:} MECC with CRC-32 and large group sizes replaces the standard ECC DIMM with a scheme that corrects up to 200+ bit flips per 4096-bit block at roughly 50\% overhead --- substantially less than the 100\% overhead of a second DRAM chip.
+A hardware accelerator implements the Feistel permutation and CRC hash computation in a memory controller, with the hash graph solver running in a dedicated microcode engine.
+
+\textbf{Key benefit:} Multi-bit burst correction capability at lower hardware cost than full ECC DRAM.
+
+\subsection*{4. Secure and Reliable Weight Storage for AI Accelerators}
+
+\textbf{Context:} Custom AI accelerators (NPUs, TPUs, inference chips) integrate large on-chip weight SRAMs.
+These dense SRAMs are vulnerable to soft errors under low-voltage operation needed for energy efficiency.
+Any ECC overhead directly reduces the number of storable model parameters.
+
+\textbf{MECC application:} The hybrid embedded/explicit MECC variant is applied layer-wise: sensitive layers (where weight distortion strongly affects accuracy) use explicit CRC storage; less sensitive layers use embedded storage.
+The hybrid assignment minimizes accuracy impact while keeping total overhead below 5\%.
+The MILP co-optimization runs offline during model compilation and adds no runtime cost.
+
+\textbf{Key benefit:} Pareto-optimal tradeoff between storage overhead and model accuracy for each layer, with full burst-correction capability.
+
+\subsection*{5. General-Purpose Configurable ECC for Storage Subsystems}
+
+\textbf{Context:} Storage subsystem designers often require different protection levels for different data tiers (hot data vs.\ cold archive), but fixed-overhead BCH codes require a different controller for each protection level.
+
+\textbf{MECC application:} A single MECC controller supports multiple protection profiles by software-configuring the CRC width and group size parameters.
+No hardware changes are needed to switch between a lightweight 10\% overhead profile (CRC-8, large groups) and a high-protection 100\% overhead profile (CRC-32, small groups).
+The same Feistel permutation engine and solver are reused across all profiles.
+
+\textbf{Key benefit:} Single hardware implementation supporting a continuous range of overhead/protection tradeoffs, replacing multiple fixed-rate ECC controllers.

@@ -1,0 +1,17 @@
+\chapter*{Terminologies}
+\begin{itemize}
+    \item \textbf{ECC (Error-Correcting Code)} -- A coding scheme that appends redundancy to data so that a decoder can detect and correct a bounded number of bit errors without retransmission.
+    \item \textbf{BCH Code} -- Bose--Chaudhuri--Hocquenghem code; a widely used class of cyclic ECC capable of correcting $t$ arbitrary errors per codeword, with overhead that scales with $t$.
+    \item \textbf{BER (Bit Error Rate)} -- The fraction of bits in a data block that have been flipped by errors; BER $= (\text{number of bit flips}) / L$.
+    \item \textbf{CRC (Cyclic Redundancy Check)} -- A family of hash functions (CRC-8, CRC-16, CRC-32) that compute a short digest of a data block by polynomial division; used here as lightweight per-group checksums.
+    \item \textbf{Feistel Cipher} -- A symmetric structure for building block ciphers (and permutations) from a round function applied alternately to halves of an input; used here to construct a pseudorandom bijection from source indices to grid coordinates.
+    \item \textbf{Cycle-Walking} -- A technique for adapting a Feistel permutation to a non-power-of-two domain by iterating the permutation until the output falls within the valid range.
+    \item \textbf{Bipartite Hash Graph} -- An undirected weighted graph whose nodes are the row-group and column-group CRC hash nodes, and whose edges connect any two nodes whose source-bit index sets overlap; the graph is bipartite because edges exist only between row-group nodes and column-group nodes, never within the same group type.
+    \item \textbf{HashNode} -- A data structure representing a single CRC hash computed over a group of grid rows or columns, carrying its axis (row/column), group index, digest value, and the set of source-bit indices it covers.
+    \item \textbf{Overhead Ratio} -- The fraction of additional storage required for ECC metadata relative to the original data size: $(\text{metadata bits}) / L$.
+    \item \textbf{Burst Error} -- A pattern of bit-flip errors concentrated in a contiguous range of source indices, as opposed to random errors spread independently across the block.
+    \item \textbf{MILP (Mixed-Integer Linear Program)} -- An optimization problem with a linear objective and constraints, where some variables are constrained to integer (binary) values; used here to co-optimize data values and CRC parity bits jointly.
+    \item \textbf{Embedded Metadata} -- CRC hash bits stored not in a separate parity region but encoded within the bit representation of the data payload values themselves, eliminating explicit parity storage overhead.
+    \item \textbf{Grid Mapping} -- The bijective assignment of source-bit indices to $(r, c)$ positions in an $N \times N$ two-dimensional grid via the Feistel permutation.
+    \item \textbf{MECC} -- Malleable Error Correcting Codes; the name of the invention disclosed in this document.
+\end{itemize}

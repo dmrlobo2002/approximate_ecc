@@ -1,0 +1,33 @@
+\section*{Innovative Claims}
+\noindent We make the following innovative claims, compared to the state-of-the-art.
+\begin{enumerate}
+
+    \item \textbf{Feistel-Permuted Bit-Grid Mapping for Burst-Error Equalization.}
+    A method of mapping a flat bit array of length $L$ onto an $N \times N$ two-dimensional grid ($N = \lceil\sqrt{L}\rceil$) using a cycle-walking Feistel cipher, such that contiguous burst errors in the source domain are distributed uniformly and pseudo-randomly across grid positions, rendering the error pattern effectively random for subsequent correction stages regardless of the original burst structure.
+
+    \item \textbf{Bipartite CRC Hash Graph over Grid Row and Column Groups.}
+    A data structure comprising CRC checksums computed over non-overlapping groups of consecutive rows and groups of consecutive columns of the permuted bit grid, organized into a bipartite undirected weighted graph where edges connect pairs of row-group and column-group nodes sharing common source-bit indices, weighted by the number of shared bits.
+    Each bit in the source array is covered by exactly one row-group hash and one column-group hash, creating a two-sided redundancy structure that localizes errors to row/column intersection regions.
+
+    \item \textbf{Coverage-Ordered Exhaustive Flip-Combination Solver.}
+    A bit-flip correction method that processes hash graph nodes in order of increasing source-bit coverage (smallest group first), and for each mismatched node exhaustively enumerates all combinations of 0, 1, 2, \ldots flips within the node's covered bits until a combination restores hash agreement, accepting the candidate that maximizes the total number of matched nodes across the full grid.
+    This greedy-optimal strategy exploits the bipartite graph structure to narrow the enumeration search space at each step.
+
+    \item \textbf{Configurable Overhead via CRC Width and Group Size Parameters.}
+    A parameterized ECC scheme in which the storage overhead is independently tunable via (i) the CRC polynomial width (CRC-8, CRC-16, or CRC-32) and (ii) the number of bits per row/column group, enabling practitioners to choose any point on the correction-capacity vs.\ overhead tradeoff curve without changing the underlying correction algorithm.
+
+    \item \textbf{Sub-Linear Overhead Scaling ($O(1/\sqrt{L})$).}
+    A storage overhead ratio that decreases as $O(1/\sqrt{L})$ with block length $L$ (for fixed group size), so that larger blocks benefit from proportionally lower overhead --- the opposite scaling behavior from BCH codes, whose overhead is fixed by the number of correctable errors $t$ regardless of block size.
+
+    \item \textbf{Burst-Error Resilience via Permutation Equalization.}
+    A correction scheme that achieves equal performance on burst errors and random errors, by virtue of the Feistel permutation transforming any contiguous burst into a pseudo-random scatter pattern on the grid before hashing.
+    No interleaving buffer, shuffle memory, or burst-specific decoder is required.
+
+    \item \textbf{Zero-Overhead Embedded CRC Metadata via MILP Co-Optimization.}
+    A method of embedding CRC hash metadata bits directly into the bit representation of structured data payload values (e.g., quantized neural network weights) by solving a mixed-integer linear program that minimizes the sum of absolute value distortions $\sum_i |v_i - v_i^{\text{eff}}|$ subject to the constraint that all CRC group parity equations are satisfied by the effective value bit vectors, yielding near-zero effective storage overhead while preserving full hash-graph correction capability.
+
+    \item \textbf{Hybrid Embedded/Explicit ECC with Configurable Distortion-Overhead Tradeoff.}
+    A hybrid ECC variant that assigns each CRC group independently to either embedded metadata storage (zero overhead, small distortion) or explicit metadata storage (small overhead, zero distortion), with the assignment determined by a sensitivity score reflecting the relative importance of data fidelity vs.\ storage cost for that group.
+    The hybrid assignment spans the full Pareto frontier between zero-overhead/max-distortion and max-overhead/zero-distortion operating points.
+
+\end{enumerate}

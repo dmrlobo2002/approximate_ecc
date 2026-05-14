@@ -1,0 +1,96 @@
+\chapter*{Algorithm}
+\noindent
+
+\subsection*{Algorithm 1: Feistel Permutation (Cycle-Walking)}
+
+\noindent\textbf{Input:} Index $i \in [0, L)$, block length $L$, key $k$, number of rounds $R=4$.\\
+\textbf{Output:} Permuted index $j \in [0, L)$ such that $j \neq i'$ for distinct $i \neq i'$.
+
+\begin{enumerate}
+    \item Set $N = \lceil\sqrt{L}\rceil$. Let $b = \lceil\log_2 N \rceil$ (half-word bit width).
+    \item Repeat until result is in $[0, L)$:
+    \begin{enumerate}
+        \item Split current index into two $b$-bit halves: $(L_0, R_0) \gets (\text{index} \gg b,\; \text{index} \mathbin{\&} (2^b{-}1))$.
+        \item For round $r = 1$ to $R$:
+        \begin{enumerate}
+            \item Compute $f = \text{SHA-256}(r \| k \| L_{r-1})_{\text{low }b\text{ bits}}$.
+            \item Set $L_r \gets R_{r-1}$, $R_r \gets L_{r-1} \oplus f$.
+        \end{enumerate}
+        \item Reconstruct index as $(L_R \ll b) \mathbin{|} R_R$.
+    \end{enumerate}
+    \item Return the index.
+\end{enumerate}
+
+\textbf{Note:} Inversion is identical except rounds are applied in reverse order ($r = R$ down to $1$) with $L_r \gets R_{r+1}$, $R_r \gets L_{r+1} \oplus f_r$.
+
+\bigskip
+
+\subsection*{Algorithm 2: MECC Encoding (Baseline Hash Computation)}
+
+\noindent\textbf{Input:} Bit array $B[0..L{-}1]$, key $k$, group size $g$, CRC width $W_c \in \{8,16,32\}$.\\
+\textbf{Output:} Grid $G$, list of \texttt{HashNode} objects $H$.
+
+\begin{enumerate}
+    \item Build $N \times N$ grid: for each $i \in [0,L)$, set $G[r][c] \gets B[i]$ where $(r,c) = \texttt{permute}(i, L, k)$.
+    \item Partition rows into $G_r = \lceil N/g \rceil$ row groups, each covering $g$ consecutive rows (last group may be smaller).
+    \item For each row group $p$:
+    \begin{enumerate}
+        \item Collect all bits in those rows that correspond to valid source indices (non-padding).
+        \item Compute $d_p \gets \text{CRC-}W_c(\text{bits})$.
+        \item Record $\texttt{HashNode}(\text{id}=p, \text{axis}=\text{ROW}, \text{digest}=d_p, \text{source\_indices}=S_p)$.
+    \end{enumerate}
+    \item Repeat steps 2--3 for column groups.
+    \item Return $G$ and the list $H$ of all hash nodes.
+\end{enumerate}
+
+\bigskip
+
+\subsection*{Algorithm 3: Coverage-Ordered Flip Solver (MECC Decoding)}
+
+\noindent\textbf{Input:} Damaged grid $G'$, baseline hash node list $H^*$, max flip depth $d_{\max}$.\\
+\textbf{Output:} Corrected grid $G^{\text{corr}}$.
+
+\begin{enumerate}
+    \item Build $\texttt{HashDag}$ from $H^*$; sort nodes by $|\text{source\_indices}|$ ascending.
+    \item Set working grid $\hat{G} \gets G'$.
+    \item For each node $n$ in sorted order:
+    \begin{enumerate}
+        \item Compute current digest $d_n' = \text{CRC-}W_c(\hat{G}[\text{n.source\_indices}])$.
+        \item If $d_n' = n.\text{digest}$: continue (node already satisfied).
+        \item For $k = 1, 2, \ldots, d_{\max}$:
+        \begin{enumerate}
+            \item For each $k$-element subset $F \subseteq n.\text{source\_indices}$:
+            \begin{enumerate}
+                \item Tentatively flip bits $F$ in $\hat{G}$.
+                \item Recompute $d_n'$; if $d_n' \neq n.\text{digest}$, undo and continue.
+                \item Compute global score $s(F)$ = number of hash nodes (all axes) whose digest matches after flipping $F$.
+                \item Record $(F, s(F))$.
+                \item Undo flip.
+            \end{enumerate}
+            \item If any valid candidate found, apply the $F^*$ with highest $s(F^*)$; break inner loop.
+        \end{enumerate}
+    \end{enumerate}
+    \item Return $\hat{G}$ as $G^{\text{corr}}$.
+\end{enumerate}
+
+\bigskip
+
+\subsection*{Algorithm 4: MILP-Based Metadata Embedding (Zero-Overhead Variant)}
+
+\noindent\textbf{Input:} Original data values $\{v_i\}_{i=1}^{W}$ ($h$ bits each), target CRC digests $\{d_g\}$ from baseline hash nodes.\\
+\textbf{Output:} Modified values $\{v_i^{\text{eff}}\}$ satisfying all CRC constraints with minimum total distortion.
+
+\begin{enumerate}
+    \item Introduce binary decision variables $m_{i,j} \in \{0,1\}$ for bit $j$ of value $i$ ($i = 1,\ldots,W$; $j = 1,\ldots,h$).
+    \item Define $v_i^{\text{eff}} = \sum_{j=1}^{h} 2^{h-j} \cdot m_{i,j}$ (unsigned; apply offset for signed representation).
+    \item For each CRC group $g$ with covered bit indices $S_g$:
+    \begin{enumerate}
+        \item Introduce auxiliary integer variables to model the CRC polynomial evaluation modulo 2 over $\{m_{i,j} : (i,j) \in S_g\}$.
+        \item Add constraint: $\text{CRC}(\{m_{i,j}\}) = d_g$.
+    \end{enumerate}
+    \item Minimize $\sum_{i=1}^{W} |v_i - v_i^{\text{eff}}|$ (linearize absolute value with standard auxiliary variables).
+    \item Solve using a constraint programming solver (e.g., Google CP-SAT or Gurobi).
+    \item Store $\{v_i^{\text{eff}}\}$ in place of $\{v_i\}$. No separate parity storage is written.
+\end{enumerate}
+
+\textbf{Note:} At decode time, Algorithm 3 runs unchanged on the (possibly corrupted) stored values $\{v_i^{\text{eff}}\}$, treating them as the source bit array. The embedded CRC constraints are satisfied by construction, so correction proceeds normally.

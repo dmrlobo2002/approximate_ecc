@@ -1,0 +1,15 @@
+\section*{ABSTRACT:}
+\noindent
+We present \textbf{Malleable Error Correcting Codes (MECC)}, a novel error correction framework that provides configurable, high-capacity bit-flip correction with storage overhead that scales favorably with block size.
+MECC maps a flat bit array onto a two-dimensional grid using a Feistel cipher permutation, which distributes burst errors uniformly across the grid.
+CRC checksums are computed over non-overlapping row and column groups of the grid, forming a bipartite hash graph whose edges connect row-group and column-group nodes that share source bits.
+When errors are detected, the graph structure localizes corrupted bits to small intersection regions, and a coverage-ordered exhaustive solver restores hash agreement by enumerating flip combinations over the smallest groups first.
+
+Experimental results at 4096-bit block length demonstrate 100\% correction success for over 200 bit flips (BER $\geq$ 5\%) using CRC-32 hashes.
+Critically, storage overhead scales as $O(1/\sqrt{L})$, decreasing as block size grows, in contrast to BCH codes whose overhead grows with the number of correctable errors.
+The Feistel permutation equalizes burst-error patterns, allowing MECC to correct burst errors as effectively as random errors --- a fundamental advantage over BCH.
+
+As a complementary extension, we disclose an \textbf{embedded metadata variant} that eliminates the need to store CRC hash values as separate overhead.
+The hash bits are co-embedded into the data payload values using a mixed-integer linear program (MILP) that minimizes data distortion while satisfying CRC constraints.
+This approach, analogous to recent zero-overhead ECC techniques for neural network weight storage, brings the effective storage overhead of MECC close to zero.
+The combined invention --- high-capacity correction with tunable or near-zero overhead --- is particularly compelling for memory-constrained edge deployments including neural network inference accelerators, NAND flash storage, and safety-critical DRAM systems.

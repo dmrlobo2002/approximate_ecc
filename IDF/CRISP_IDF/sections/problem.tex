@@ -1,0 +1,43 @@
+\chapter*{Problem Statement}
+\noindent
+Memory errors pose an increasingly severe reliability challenge for digital storage and computing systems.
+In modern SRAM, DRAM, and non-volatile memory (NVM) technologies, bit-flip errors arise from multiple sources: radiation-induced soft errors (single-event upsets), SRAM cell instability under voltage droops, charge leakage in NAND flash, and write endurance degradation in phase-change memory (PCM) and resistive RAM (ReRAM).
+At the edge, where devices operate under tight power budgets and cannot afford frequent memory scrubbing, cumulative bit-flip rates can reach bit error rates (BER) of 1\%--10\% per cell over the device lifetime.
+
+\subsection*{Limitation 1: Overhead Scaling of Traditional ECC}
+
+BCH codes are the dominant ECC family for flash and DRAM, but their storage overhead scales poorly with the number of correctable errors.
+Protecting a 4096-bit block against a 1.5\% BER requires approximately 10.5\% parity overhead; protecting against a 9.5\% BER requires over 110\% overhead --- essentially doubling the memory footprint.
+This tradeoff is poorly suited to edge devices where memory is scarce and cannot be dedicated to parity storage.
+Reed-Solomon codes exhibit similar scaling behavior.
+LDPC codes achieve better rate-efficiency but require complex belief-propagation decoders ill-suited to embedded hardware.
+
+\subsection*{Limitation 2: Vulnerability to Burst Errors}
+
+BCH codes are designed assuming a \emph{random} error model: $t$ errors spread independently across the codeword.
+In practice, memory errors are highly bursty.
+A single radiation particle strike, a voltage droop event, or a localized wear-out region produces a cluster of adjacent bit flips.
+A BCH code designed for $t$ random errors provides no guaranteed correction when the same $t$ errors appear as a contiguous burst.
+This fundamental mismatch between the assumed and actual error model degrades real-world reliability far below the theoretical guarantee.
+While interleaving can spread bursts, it multiplies memory access complexity and latency.
+
+\subsection*{Limitation 3: Storage of Error-Correction Metadata}
+
+Even when an ECC scheme achieves good correction efficiency, the parity or hash metadata must be stored somewhere --- typically in a reserved memory region or a dedicated parity chip.
+For neural network inference accelerators at the edge, model weights are densely packed in on-chip SRAM; any dedicated parity storage consumes precious capacity that would otherwise hold additional parameters or activations.
+
+Existing zero-overhead approaches embed parity into the least-significant bits (LSBs) of neural network weights, overwriting them with parity values.
+This simple strategy leads to large weight distortions, particularly for heavily quantized (4-bit or 8-bit) models, and can significantly degrade inference accuracy.
+More sophisticated embedding techniques minimize distortion but are limited to BCH-scale protection (correcting only a few errors per codeword) and do not scale to the hundreds of errors per block that edge devices increasingly face.
+
+\subsection*{Summary of Unmet Need}
+
+No existing ECC scheme simultaneously achieves:
+\begin{enumerate}
+    \item High multi-bit correction capacity ($t > 100$ errors per block),
+    \item Storage overhead that \emph{shrinks} as block size grows,
+    \item Robust correction of burst errors without interleaving,
+    \item The option to embed error-correction metadata into the payload itself with near-zero overhead and minimal data distortion.
+\end{enumerate}
+
+MECC addresses all four requirements through the invention disclosed in this document.

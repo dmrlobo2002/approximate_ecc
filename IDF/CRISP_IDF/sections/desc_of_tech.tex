@@ -1,0 +1,184 @@
+\section*{Description of the Technology} \label{sec:tech_desc}
+\noindent
+
+\subsection*{1. Malleable Error Correcting Code Pipeline}
+
+\subsubsection*{1.1 Feistel Permutation (\texttt{feistel\_perm.py})}
+
+The first stage of MECC transforms a flat source-bit index space into a two-dimensional grid via a Feistel cipher permutation.
+Given a block length $L$, the grid dimension is $N = \lceil\sqrt{L}\rceil$, so the grid has $N^2 \geq L$ cells (padded with zeros).
+The permutation domain is $[0, N^2)$; cycle-walking is used to handle indices in $[L, N^2)$ that are outside the valid range.
+
+A single permutation step applies a 4-round balanced Feistel network over the $(\lceil\log_2 N\rceil)$-bit half-words of the index.
+The round function is the first 4 bytes of a SHA-256 hash of (round number $\| $ key $\| $ half-word value), truncated to the half-word length.
+Cycle-walking rejects any output in $[L, N^2)$ and re-applies the permutation until the output is in $[0, L)$.
+Both the forward permutation (\texttt{permute\_index}) and its inverse (\texttt{invert\_index}) are available, enabling bidirectional index translation.
+
+\textbf{Burst equalization property.}
+Consider a burst error of width $w$ starting at source index $s$: it corrupts indices $s, s{+}1, \ldots, s{+}w{-}1$.
+The Feistel permutation maps these to grid positions $(r_0, c_0), (r_1, c_1), \ldots$ that are pseudorandomly scattered across the grid.
+From the perspective of the hash graph, the burst looks identical to $w$ independent random errors.
+
+\subsubsection*{1.2 Grid Construction and Source-Index Tracking (\texttt{grid\_shuffle.py})}
+
+The \texttt{GridMeta} object stores two bidirectional index maps: \texttt{source\_to\_grid} (source index $\to$ grid $(r,c)$) and \texttt{grid\_to\_source} (grid $(r,c) \to$ source index).
+\texttt{bits\_to\_grid} produces the $N \times N$ grid array; \texttt{grid\_to\_bits} inverts it, recovering the flat bit array from any (possibly corrected) grid state.
+Padding cells carry value 0 and are excluded from hash group computations.
+
+\subsubsection*{1.3 CRC Hash Groups (\texttt{group\_hash.py})}
+
+Given the $N \times N$ grid, CRC hashes are computed over non-overlapping groups of consecutive rows and groups of consecutive columns.
+The number of rows (or columns) per group is a design parameter; smaller groups provide finer-grained error localization at the cost of more hash storage.
+Each \texttt{HashNode} stores:
+\begin{itemize}
+    \item \texttt{node\_id}: a unique integer identifier,
+    \item \texttt{axis}: \texttt{ROW} or \texttt{COL},
+    \item \texttt{digest}: the CRC checksum computed over all bits in the group (using CRC-8, CRC-16, or CRC-32),
+    \item \texttt{source\_indices}: the sorted list of original source-bit indices covered by this group.
+\end{itemize}
+
+The total metadata stored is $(G_r + G_c) \cdot B$ bits, where $G_r$ and $G_c$ are the numbers of row and column groups respectively, and $B$ is the CRC width.
+The overhead ratio is $(G_r + G_c) \cdot B / L$.
+With group size $g$, $G_r = G_c = \lceil N/g \rceil \approx \sqrt{L}/g$, so overhead $\approx 2\sqrt{L} \cdot B / (g \cdot L) = 2B/(g\sqrt{L})$, confirming $O(1/\sqrt{L})$ scaling.
+
+% TODO: Insert Figure 3 (scalability) here
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.85\textwidth]{../results/fig3/fig3_scalability.png}
+% \caption{Overhead ratio and success rate across block sizes 256--4096 bits.}
+% \label{fig:scalability}
+% \end{figure}
+\begin{figure}[h]
+\centering
+\rule{0.85\textwidth}{0.4pt}\\[6pt]
+\textit{[TODO: Insert \texttt{results/fig3/fig3\_scalability.png} --- Overhead ratio and success rate across block sizes 256--4096 bits, comparing MECC and BCH.]}\\[6pt]
+\rule{0.85\textwidth}{0.4pt}
+\caption{Overhead ratio and success rate vs.\ block size (256--4096 bits).}
+\label{fig:scalability}
+\end{figure}
+
+\subsubsection*{1.4 Bipartite Hash Graph Construction (\texttt{hash\_dag.py})}
+
+The \texttt{HashDag} is built from the full list of \texttt{HashNode} objects.
+An undirected edge is inserted between any two nodes whose \texttt{source\_indices} sets have non-empty intersection; the edge weight is the intersection cardinality.
+Nodes are sorted by \texttt{covered\_bits} (ascending) to guide the repair order: smaller nodes are repaired first, reducing the search space for subsequent larger nodes.
+
+The resulting graph has a bipartite backbone (row-group nodes and column-group nodes) with edges between any row-group and column-group node that share at least one source bit.
+For square grids with unit-sized groups ($g=1$), every row-group node shares exactly $N$ source bits with every column-group node, forming a complete bipartite graph.
+For larger groups, the intersection structure becomes sparser, reflecting the coarser localization granularity.
+
+\subsubsection*{1.5 Coverage-Ordered Solver (\texttt{bitflip\_solver.py})}
+
+The solver corrects errors by iterating hash nodes in coverage order (fewest covered bits first) and performing local repair.
+For each node whose current digest does not match the stored baseline digest, the solver:
+
+\begin{enumerate}
+    \item Enumerates all subsets of size $k = 0, 1, 2, \ldots$ of the node's source indices (in increasing $k$).
+    \item For each subset, tentatively flips those bits in the working grid and recomputes the node's CRC hash.
+    \item If the hash matches the baseline, evaluates the proposed flip set globally by counting the total number of matched hash nodes across the entire grid.
+    \item Accepts the candidate with the highest global match count; ties are broken by the smaller flip set.
+    \item Advances to the next node.
+\end{enumerate}
+
+The solver returns a \texttt{SolveResult} containing the corrected grid, the number of matched/mismatched nodes, and the total number of bit flips applied.
+This greedy-optimal strategy is highly effective because the Feistel equalization ensures errors are spread thinly across node boundaries, so most nodes cover only 0 or 1 actual errors and are resolved in the first one or two enumeration steps.
+
+% TODO: Insert Figure 1 (headline) here
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.85\textwidth]{../results/fig1/fig1_headline.png}
+% \caption{Success rate and solver time vs.\ number of bit flips at 4096-bit block length.}
+% \label{fig:headline}
+% \end{figure}
+\begin{figure}[h]
+\centering
+\rule{0.85\textwidth}{0.4pt}\\[6pt]
+\textit{[TODO: Insert \texttt{results/fig1/fig1\_headline.png} --- Success rate and solver time vs.\ number of bit flips at 4096-bit block length, CRC-8/16/32 comparison.]}\\[6pt]
+\rule{0.85\textwidth}{0.4pt}
+\caption{Correction success rate and solver time vs.\ number of bit flips (4096-bit block).}
+\label{fig:headline}
+\end{figure}
+
+\subsubsection*{1.6 Overhead Comparison with BCH}
+
+Figure~\ref{fig:overhead} compares MECC storage overhead with BCH at equivalent error-correction capacities.
+BCH overhead grows roughly linearly with $t$ (the number of correctable errors), while MECC overhead depends only on the block size and hash parameters.
+At $t = 200$ errors in a 4096-bit block, BCH requires $> 50\%$ overhead; MECC with CRC-32 requires $\approx 100\%$ overhead but can also operate at lower overheads with CRC-8/16 while still correcting $t > 50$ errors.
+For blocks larger than $\sim$4096 bits, MECC's $O(1/\sqrt{L})$ scaling means its overhead crosses below BCH at even modest error counts.
+
+% TODO: Insert Figure 2 (overhead comparison) here
+\begin{figure}[h]
+\centering
+\rule{0.85\textwidth}{0.4pt}\\[6pt]
+\textit{[TODO: Insert \texttt{results/fig2/fig2\_overhead\_comparison.png} --- Overhead ratio vs.\ number of correctable errors, MECC vs.\ BCH.]}\\[6pt]
+\rule{0.85\textwidth}{0.4pt}
+\caption{Overhead ratio vs.\ correctable error count: MECC vs.\ BCH (4096-bit block).}
+\label{fig:overhead}
+\end{figure}
+
+\subsubsection*{1.7 Burst Error Resilience}
+
+Because the Feistel permutation maps any burst to a scattered pattern on the grid, MECC's correction success is essentially unchanged between random errors and burst errors of equal count.
+This is in sharp contrast to BCH codes, which are designed for random errors and may fail completely under burst errors of the same count.
+
+% TODO: Insert Figure 4 (burst resilience) here
+\begin{figure}[h]
+\centering
+\rule{0.85\textwidth}{0.4pt}\\[6pt]
+\textit{[TODO: Insert \texttt{results/fig4/fig4\_burst\_resilience.png} --- Success rate and solver effort for random vs.\ burst errors, showing near-identical performance for MECC.]}\\[6pt]
+\rule{0.85\textwidth}{0.4pt}
+\caption{Burst vs.\ random error resilience at 4096-bit block length.}
+\label{fig:burst}
+\end{figure}
+
+\subsection*{2. Embedded Metadata Storage via MILP Co-Optimization}
+
+\subsubsection*{2.1 Motivation: Storage Cost of Explicit CRC Metadata}
+
+In the baseline MECC scheme, CRC hash values are stored in a dedicated parity region alongside the data block.
+For a 4096-bit block with CRC-32 and 64 groups ($G_r = G_c = 32$), this amounts to $64 \times 32 = 2048$ parity bits --- a 50\% overhead.
+For edge neural networks with tightly constrained on-chip SRAM, even this modest overhead may be unacceptable.
+
+\subsubsection*{2.2 Key Insight from Zero-Overhead ECC}
+
+Recent work on ECC for neural networks (E$^3$-CODE, DAC 2026~\cite{e3code2026}) demonstrated that parity bits for BCH codes can be embedded directly into quantized weight values by solving a mixed-integer linear program that minimizes weight distortion.
+Instead of overwriting only the LSBs (which causes large distortions), the MILP is free to perturb any bit of any weight to satisfy parity constraints, and it finds the globally minimum-distortion assignment.
+
+We extend this insight to MECC: the CRC hash bits can be embedded into the data payload in the same way.
+
+\subsubsection*{2.3 MILP Formulation for Embedded CRC Metadata}
+
+Let the data block consist of $W$ values $v_1, \ldots, v_W$, each represented by $h$ bits, for a total of $L = Wh$ bits.
+Let $m = (m_1, \ldots, m_L) \in \{0,1\}^L$ be the bit representation to be stored.
+The MILP is:
+
+\begin{center}
+\textbf{Minimize} $\displaystyle\sum_{i=1}^{W} |v_i - v_i^{\text{eff}}(m)|$
+\end{center}
+
+subject to: for each CRC group $g$ with covered index set $S_g$, the CRC polynomial evaluated over $\{m_j : j \in S_g\}$ equals the target digest $d_g$.
+
+Here $v_i^{\text{eff}}(m)$ is the numeric value reconstructed from bits $m_{(i-1)h+1}, \ldots, m_{ih}$.
+The CRC constraints are linearizable using standard binary variable techniques (carry-chain XOR expansions), allowing off-the-shelf MILP solvers (e.g., Google CP-SAT) to find solutions in under one second per codeword on commodity hardware.
+
+\subsubsection*{2.4 Overhead and Distortion Tradeoff}
+
+Table~\ref{tab:overhead_comparison} summarizes the overhead and distortion characteristics of MECC variants compared to BCH.
+
+\begin{table}[h]
+\centering
+\caption{Overhead and distortion comparison for 4096-bit block, BER $\approx$ 5\%.}
+\label{tab:overhead_comparison}
+\begin{tabular}{lccc}
+\hline
+\textbf{Scheme} & \textbf{Overhead} & \textbf{Data Distortion} & \textbf{Correctable Errors} \\
+\hline
+BCH (explicit)       & $> 110\%$  & None    & $\leq t$ random \\
+MECC (explicit)      & $\sim 50\%$ & None    & $200+$ random/burst \\
+MECC (embedded, full) & $\sim 0\%$  & Small   & $200+$ random/burst \\
+MECC (hybrid)        & $< 10\%$    & Minimal & $200+$ random/burst \\
+\hline
+\end{tabular}
+\end{table}
+
+The embedded variant is especially powerful for edge neural network weight storage: the MILP-induced weight perturbations are typically smaller than quantization noise, so inference accuracy is unaffected, yet the device achieves full MECC correction capability at zero storage overhead.

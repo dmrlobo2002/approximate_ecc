@@ -1,0 +1,28 @@
+\section*{Assumptions}
+\begin{itemize}
+
+    \item \textbf{Block size range.} The invention is demonstrated and evaluated for block sizes $L \in \{256, 512, 1024, 2048, 4096\}$ bits.
+    The approach generalizes to any block size; overhead scaling behavior ($O(1/\sqrt{L})$) holds for all $L$.
+
+    \item \textbf{Error rate regime.} The primary operating regime is BER up to approximately 5\% of block bits (i.e., up to $\sim$200 bit flips per 4096-bit block with CRC-32).
+    At very high BER ($> 10\%$), success rate degrades gracefully; the scheme does not guarantee correction at arbitrarily high error rates.
+
+    \item \textbf{Availability of a clean baseline.} The coverage-ordered solver requires a set of baseline CRC digests computed over the uncorrupted data.
+    These are stored alongside the (possibly corrupted) data block or embedded into the payload, and are assumed to be reliable (e.g., stored in more robust memory, or re-derivable from a checkpointed copy).
+
+    \item \textbf{Key availability for Feistel permutation.} The Feistel permutation requires a per-block key for the permutation.
+    This key must be consistently available at both encoding and decoding time.
+    For applications without a natural secret key (e.g., non-cryptographic storage), a fixed or publicly known key is sufficient for the burst-equalization benefit.
+
+    \item \textbf{Embedded metadata variant applicability.} The MILP-based embedded metadata variant assumes the data payload consists of structured values whose bit representation has sufficient degrees of freedom to absorb CRC constraint perturbations with acceptable distortion.
+    This is satisfied by quantized neural network weights (8-bit or higher), floating-point mantissa bits, and sensor readings represented with headroom.
+    The variant is not applicable to data that must be stored at exact bit-for-bit precision.
+
+    \item \textbf{Solver runtime.} The coverage-ordered solver's runtime scales with the number of mismatched nodes and the enumeration depth (maximum flip count attempted per node).
+    For BER $\leq 5\%$ at 4096 bits with CRC-32, solver runtime is on the order of seconds on commodity CPU hardware.
+    Hardware acceleration (e.g., FPGA or dedicated silicon) can reduce this to microseconds.
+
+    \item \textbf{CRC collision probability.} CRC-$B$ hashes have a false-positive probability of $2^{-B}$ per check.
+    CRC-32 provides $< 2.3 \times 10^{-10}$ false-positive probability per hash node, which is negligible for the group sizes considered.
+
+\end{itemize}

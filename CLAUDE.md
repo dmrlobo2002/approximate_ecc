@@ -75,23 +75,19 @@ python demo.py --bit-length 37 --hash-bits 16 --flip-count 2 --seed 1
 # Run demo with DAG visualization (requires graphviz system binary + pip package)
 python demo.py --bit-length 1024 --hash-bits 16 --row-group-size 1 --col-group-size 1 --flip-count 2 --seed 1 --viz
 
-# Figure 1: Headline — success rate & solve time vs flip count at 4096 bits
-python fig1_headline.py --bit-length 4096 --keys 30 --parallel
+# Figure 1: Solver performance — solve time & comparisons vs block size, BER, hash width
+python fig1_performance.py --keys 20 --parallel
 
-# Figure 2: Overhead comparison — our scheme vs BCH
-python fig2_overhead_comparison.py --bit-length 4096 --keys 20 --parallel
+# Figure 2: Success rate vs block size, BER, and hash width (reuses fig1 data)
+python fig2_success_rate.py --data-file results/fig1/raw_data.csv
 
-# Figure 3: Scalability — overhead and success across block sizes
-python fig3_scalability.py --bit-lengths 256,512,1024,2048,4096 --keys 20 --parallel
-
-# Figure 4: Burst resilience — Feistel shuffle equalizes burst vs random errors
-python fig4_burst_resilience.py --bit-length 4096 --keys 30 --parallel
+# Figure 3: Feistel shuffle effectiveness — 2D burst scatter maps (no trials needed)
+python fig3_feistel_map.py
 
 # Quick smoke tests (fast, few keys, no plots)
-python fig1_headline.py --bit-length 4096 --keys 5 --no-plot --parallel
-python fig2_overhead_comparison.py --bit-length 4096 --keys 5 --no-plot --parallel
-python fig3_scalability.py --bit-lengths 256,1024,4096 --keys 5 --no-plot --parallel
-python fig4_burst_resilience.py --bit-length 4096 --keys 5 --no-plot --parallel
+python fig1_performance.py --keys 3 --no-plot --parallel
+python fig2_success_rate.py --keys 3 --no-plot --parallel
+python fig3_feistel_map.py
 ```
 
 Optional dependencies: `pip install graphviz matplotlib`
@@ -124,13 +120,11 @@ baseline + damaged grids  →  correct_with_dag()  →  SolveResult (corrected g
 
 - **`experiments/common.py`** — Shared utilities: deterministic key derivation (`stable_key`), deterministic RNG (`stable_rng`), aggregation stats (`agg`, `median`, `Agg`), and CSV/JSON writers.
 
-- **`fig1_headline.py`** — Success rate and solve time vs flip count at 4096 bits. Shows the scheme corrects 200+ flips (BER ≥5%) with CRC-32 at 100% overhead. Outputs to `results/fig1/`.
+- **`fig1_performance.py`** — Solve time and comparisons evaluated vs block size, BER, and hash width. 2×3 subplot grid with log y-axes. Saves raw trial data to `results/fig1/raw_data.csv`.
 
-- **`fig2_overhead_comparison.py`** — Overhead ratio vs correctable errors: our scheme vs BCH (analytical). Shows our scheme corrects more errors per overhead percent than BCH at any overhead budget. Outputs to `results/fig2/`.
+- **`fig2_success_rate.py`** — Correction success rate vs block size, BER, and hash width. Reads from `--data-file` (fig1's CSV) or runs its own sweep. Outputs to `results/fig2/`.
 
-- **`fig3_scalability.py`** — Overhead ratio and success rate across block sizes (256–4096 bits). Our overhead shrinks as O(1/√L) while BCH overhead for fixed t stays constant. Outputs to `results/fig3/`.
-
-- **`fig4_burst_resilience.py`** — Success rate and solver effort for random vs burst errors. The Feistel shuffle equalization means burst errors are as easy to correct as random errors, unlike BCH which assumes a random error model. Outputs to `results/fig4/`.
+- **`fig3_feistel_map.py`** — 2D scatter maps showing where a contiguous burst in source memory lands in the N×N grid after Feistel permutation. Rows = block sizes, cols = BER levels. No trial runner — pure geometry. Outputs to `results/fig3/`.
 
 - **`experiments/trial_runner.py`** — Shared trial execution utilities used by all figure scripts: `run_trial`, `_trial_task`, `get_flip_indices`, `run_trials_parallel`, `run_trials_serial`.
 

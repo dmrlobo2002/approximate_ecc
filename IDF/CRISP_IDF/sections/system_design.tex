@@ -1,0 +1,80 @@
+\chapter*{System Design}
+The MECC system comprises the following components:
+    \begin{enumerate}
+
+        \item \textbf{Feistel Permutation Engine}
+            \begin{enumerate}
+                \item \textit{Inputs:} Source bit array of length $L$, cryptographic key $k$.
+                \item \textit{Function:} Constructs the bijective mapping between source indices $[0, L)$ and grid coordinates $(r, c) \in [0, N)^2$ using a 4-round Feistel cipher with SHA-256 round function and cycle-walking for non-power-of-two domains.
+                \item \textit{Outputs:} Forward map \texttt{source\_to\_grid} and inverse map \texttt{grid\_to\_source}.
+                \item \textit{Key interface:} \texttt{permute\_index(i, L, key)} and \texttt{invert\_index(i, L, key)}.
+            \end{enumerate}
+
+        \item \textbf{Grid Constructor}
+            \begin{enumerate}
+                \item \textit{Inputs:} Source bit array, \texttt{GridMeta} (permutation maps).
+                \item \textit{Function:} Fills an $N \times N$ grid by placing each source bit at its permuted grid position; padding cells are set to 0.
+                \item \textit{Outputs:} $N \times N$ bit grid (NumPy array or equivalent).
+                \item \textit{Key interface:} \texttt{bits\_to\_grid(bits, meta)} and \texttt{grid\_to\_bits(grid, meta)}.
+            \end{enumerate}
+
+        \item \textbf{CRC Hash Group Generator}
+            \begin{enumerate}
+                \item \textit{Inputs:} $N \times N$ bit grid, group size $g$, CRC polynomial width $B \in \{8, 16, 32\}$.
+                \item \textit{Function:} Partitions rows into $G_r = \lceil N/g \rceil$ non-overlapping row groups and columns into $G_c = \lceil N/g \rceil$ column groups; computes CRC-$B$ digest over each group's bits; records the source-index set for each group.
+                \item \textit{Outputs:} List of \texttt{HashNode} objects (one per group), constituting the baseline or current-state metadata.
+            \end{enumerate}
+
+        \item \textbf{Hash Graph Builder}
+            \begin{enumerate}
+                \item \textit{Inputs:} List of \texttt{HashNode} objects.
+                \item \textit{Function:} Creates a \texttt{HashDag} (bipartite undirected hash graph) by inserting weighted edges between any two nodes whose source-index sets overlap; sorts nodes by ascending coverage for the solver.
+                \item \textit{Outputs:} \texttt{HashDag} object with adjacency structure and coverage-sorted node list.
+            \end{enumerate}
+
+        \item \textbf{Coverage-Ordered Flip Solver}
+            \begin{enumerate}
+                \item \textit{Inputs:} Damaged bit grid, baseline \texttt{HashDag} (digests from uncorrupted data), maximum flip enumeration depth.
+                \item \textit{Function:} Processes nodes in ascending-coverage order; for each mismatched node, enumerates flip combinations until hash agreement is restored; accepts the globally best candidate at each step.
+                \item \textit{Outputs:} \texttt{SolveResult} containing corrected grid, matched/mismatched node counts, flip count, and solve time.
+            \end{enumerate}
+
+        \item \textbf{Metadata Embedder (Optional --- Zero-Overhead Variant)}
+            \begin{enumerate}
+                \item \textit{Inputs:} Original data values $\{v_i\}$, target CRC digests from baseline hash nodes, MILP solver configuration.
+                \item \textit{Function:} Formulates and solves a MILP that finds a bit assignment $m$ minimizing $\sum_i |v_i - v_i^{\text{eff}}(m)|$ subject to CRC parity constraints; encodes the solution as the stored data values.
+                \item \textit{Outputs:} Modified data values $\{v_i^{\text{eff}}\}$ whose bit representation satisfies all CRC constraints; no separate parity storage is required.
+                \item \textit{At decode time:} Standard MECC solver is run on the (possibly corrupted) stored values; no change to the solver is needed.
+            \end{enumerate}
+
+    \end{enumerate}
+
+\subsection*{Data Flow}
+
+\begin{center}
+\texttt{source bits}\\
+$\downarrow$ Feistel Permutation Engine\\
+\texttt{N$\times$N grid}\\
+$\downarrow$ CRC Hash Group Generator\\
+\texttt{HashNode list (baseline digests)}\\
+$\downarrow$ Hash Graph Builder\\
+\texttt{HashDag} (bipartite hash graph)\\
+$\downarrow$ [encode and store; introduce errors]\\
+\texttt{damaged grid + baseline HashDag}\\
+$\downarrow$ Coverage-Ordered Flip Solver\\
+\texttt{SolveResult (corrected grid)}\\
+$\downarrow$ Grid Constructor (inverse)\\
+\texttt{corrected source bits}
+\end{center}
+
+For the embedded variant, the Metadata Embedder runs between the baseline digest computation and the storage step, replacing explicit parity storage with in-payload encoding.
+
+% TODO: Insert pipeline block diagram figure here (to be drawn manually)
+\begin{figure}[h]
+\centering
+\rule{0.85\textwidth}{0.4pt}\\[6pt]
+\textit{[TODO: Insert pipeline block diagram (to be drawn manually) showing Feistel Engine $\to$ Grid Constructor $\to$ Hash Group Generator $\to$ Hash Graph Builder $\to$ Solver, with optional Metadata Embedder branch.]}\\[6pt]
+\rule{0.85\textwidth}{0.4pt}
+\caption{MECC system pipeline block diagram.}
+\label{fig:pipeline}
+\end{figure}
