@@ -21,7 +21,7 @@ from experiments.common import (
     write_csv,
     write_json,
 )
-from experiments.trial_runner import get_flip_indices, run_trials_parallel, run_trials_serial
+from experiments.trial_runner import get_flip_indices, run_batch, run_trials_parallel, run_trials_serial
 
 DEFAULT_BIT_LENGTHS = [256, 512, 1024, 2048, 4096]
 DEFAULT_HASH_BITS = [8, 16, 32]
@@ -59,6 +59,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--max-combos", type=int, default=None,
                    help="Max combinations tried per trial (default: unlimited)")
+    p.add_argument("--max-failures", type=int, default=5,
+                   help="Stop each cell after this many failures (0 = run all keys)")
     return p.parse_args()
 
 
@@ -98,13 +100,24 @@ def main() -> None:
         "hash_bits": hash_bits_list,
         "ber_values": ber_values,
         "keys": args.keys,
+        "max_failures": args.max_failures,
         "rounds": args.rounds,
         "seed": args.seed,
         "group_size": GROUP_SIZE,
     })
 
-    all_tasks: list[tuple] = []
-    all_metas: list[tuple] = []
+    n_cells = sum(
+        1
+        for bl in bit_lengths
+        for hb in hash_bits_list
+        for ber in ber_values
+        if round(ber * bl) >= 1
+    )
+    print(f"Sweeping {n_cells} cells × up to {args.keys} keys each "
+          f"(stop after {args.max_failures} failures per cell, 0=disabled)...")
+
+    rows: list[dict[str, Any]] = []
+    cell_summaries: list[dict[str, Any]] = []
 
     for bit_length in bit_lengths:
         bits = [(i * 3 + 1) % 2 for i in range(bit_length)]
@@ -113,41 +126,87 @@ def main() -> None:
                 flip_count = round(ber * bit_length)
                 if flip_count < 1:
                     continue
+
+                cell_tasks: list[tuple] = []
+                key_ids: list[int] = []
                 for key_id in range(args.keys):
                     key = stable_key(args.seed, key_id)
                     rng = stable_rng(args.seed, key_id, bit_length, hash_bits, ber, "random")
                     flip_indices = get_flip_indices(flip_count, bit_length, "random", rng)
-                    all_tasks.append((
+                    cell_tasks.append((
                         bits, key, args.rounds, flip_indices,
                         GROUP_SIZE, GROUP_SIZE, hash_bits, "include_partial", args.max_combos, 0, "crc", 1, 1,
                     ))
-                    all_metas.append((bit_length, hash_bits, ber, key_id, flip_count))
+                    key_ids.append(key_id)
 
-    print(f"Running {len(all_tasks)} trials...")
-    if args.parallel:
-        flat_results = run_trials_parallel(all_tasks, args.workers)
-    else:
-        flat_results = run_trials_serial(all_tasks)
+                print(f"  L={bit_length} hb={hash_bits} ber={ber:.0%} ...", end="", flush=True)
 
-    rows: list[dict[str, Any]] = []
-    for trial, (bit_length, hash_bits, ber, key_id, flip_count) in zip(flat_results, all_metas):
-        rows.append({
-            "bit_length": bit_length,
-            "hash_bits": hash_bits,
-            "ber": ber,
-            "flip_count": flip_count,
-            "key_id": key_id,
-            "fully_corrected": int(trial["fully_corrected"]),
-            "solve_time_ms": trial["solve_time_ms"],
-            "total_combos_evaluated": trial["total_combos_evaluated"],
-        })
+                if args.parallel:
+                    # Run all tasks; trim results at the stopping point afterward
+                    raw = run_batch(cell_tasks, parallel=True, n_workers=args.workers)
+                else:
+                    # Truly stop early in serial mode
+                    raw = []
+                    failures = 0
+                    for task in cell_tasks:
+                        r = run_batch([task], parallel=False)[0]
+                        raw.append(r)
+                        if not r["fully_corrected"]:
+                            failures += 1
+                        if args.max_failures > 0 and failures >= args.max_failures:
+                            break
+
+                # Trim raw results at the stopping point (applies to both modes)
+                cell_rows: list[dict[str, Any]] = []
+                failures = 0
+                for trial, key_id in zip(raw, key_ids):
+                    cell_rows.append({
+                        "bit_length": bit_length,
+                        "hash_bits": hash_bits,
+                        "ber": ber,
+                        "flip_count": flip_count,
+                        "key_id": key_id,
+                        "fully_corrected": int(trial["fully_corrected"]),
+                        "crc_false_positive": int(trial["crc_false_positive"]),
+                        "mismatched_after": trial["mismatched_after"],
+                        "solve_time_ms": trial["solve_time_ms"],
+                        "total_combos_evaluated": trial["total_combos_evaluated"],
+                    })
+                    if not trial["fully_corrected"]:
+                        failures += 1
+                    if args.max_failures > 0 and failures >= args.max_failures:
+                        break
+
+                n_trials = len(cell_rows)
+                success_rate = sum(r["fully_corrected"] for r in cell_rows) / n_trials
+                crc_fp_count = sum(r["crc_false_positive"] for r in cell_rows)
+                for r in cell_rows:
+                    r["success_rate"] = round(success_rate, 6)
+
+                rows.extend(cell_rows)
+                cell_summaries.append({
+                    "bit_length": bit_length,
+                    "hash_bits": hash_bits,
+                    "ber": ber,
+                    "trials": n_trials,
+                    "failures": failures,
+                    "success_rate": round(success_rate, 6),
+                    "crc_fp_count": crc_fp_count,
+                })
+                print(f" {n_trials} trials, {failures} failures, SR={success_rate:.1%}"
+                      + (f", {crc_fp_count} CRC FP" if crc_fp_count else ""))
 
     csv_path = os.path.join(args.out_dir, "raw_data.csv")
     write_csv(csv_path, rows, [
         "bit_length", "hash_bits", "ber", "flip_count", "key_id",
-        "fully_corrected", "solve_time_ms", "total_combos_evaluated",
+        "fully_corrected", "crc_false_positive", "mismatched_after",
+        "solve_time_ms", "total_combos_evaluated", "success_rate",
     ])
     print(f"Data saved to {csv_path}")
+
+    summary_path = os.path.join(args.out_dir, "cell_summary.json")
+    write_json(summary_path, cell_summaries)
+    print(f"Cell summary saved to {summary_path}")
 
     if args.no_plot:
         return

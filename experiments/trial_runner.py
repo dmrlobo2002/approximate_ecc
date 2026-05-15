@@ -69,9 +69,13 @@ def run_trial(
     )
 
     restored_bits = grid_to_bits(result.corrected_grid, meta, key=key)
+    fully_corrected = restored_bits == bits
+    # True when the solver committed a wrong combination that passed the CRC check by collision
+    crc_false_positive = (len(result.mismatched_after) == 0 and not fully_corrected)
 
     return {
-        "fully_corrected": restored_bits == bits,
+        "fully_corrected": fully_corrected,
+        "crc_false_positive": crc_false_positive,
         "mismatched_before": len(result.mismatched_before),
         "mismatched_after": len(result.mismatched_after),
         "total_combos_evaluated": result.total_combos_evaluated,

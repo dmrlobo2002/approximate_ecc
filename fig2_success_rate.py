@@ -77,6 +77,7 @@ def _load_csv(path: str) -> list[dict]:
                 "flip_count": int(row["flip_count"]),
                 "key_id": int(row["key_id"]),
                 "fully_corrected": int(row["fully_corrected"]),
+                "mismatched_after": int(row["mismatched_after"]),
                 "solve_time_ms": float(row["solve_time_ms"]),
                 "total_combos_evaluated": int(row["total_combos_evaluated"]),
             })
@@ -119,6 +120,7 @@ def _run_sweep(args, bit_lengths, hash_bits_list, ber_values) -> list[dict[str, 
             "flip_count": flip_count,
             "key_id": key_id,
             "fully_corrected": int(trial["fully_corrected"]),
+            "mismatched_after": trial["mismatched_after"],
             "solve_time_ms": trial["solve_time_ms"],
             "total_combos_evaluated": trial["total_combos_evaluated"],
         })
@@ -145,6 +147,22 @@ def _success_series(rows, x_key, x_vals, **fixed):
             continue
         n = len(subset)
         p = sum(r["fully_corrected"] for r in subset) / n
+        se = math.sqrt(p * (1 - p) / n) if n > 1 and 0 < p < 1 else 0.0
+        xs.append(xv)
+        ys.append(p * 100)
+        errs.append(se * 100)
+    return xs, ys, errs
+
+
+def _false_solve_series(rows, x_key, x_vals, **fixed):
+    """Fraction of trials where solver converged (mismatched_after==0) but bits are wrong."""
+    xs, ys, errs = [], [], []
+    for xv in x_vals:
+        subset = _filter(rows, **dict(fixed, **{x_key: xv}))
+        if not subset:
+            continue
+        n = len(subset)
+        p = sum(1 for r in subset if r["mismatched_after"] == 0 and r["fully_corrected"] == 0) / n
         se = math.sqrt(p * (1 - p) / n) if n > 1 and 0 < p < 1 else 0.0
         xs.append(xv)
         ys.append(p * 100)
@@ -181,7 +199,7 @@ def main() -> None:
         csv_path = os.path.join(args.out_dir, "raw_data.csv")
         write_csv(csv_path, rows, [
             "bit_length", "hash_bits", "ber", "flip_count", "key_id",
-            "fully_corrected", "solve_time_ms", "total_combos_evaluated",
+            "fully_corrected", "mismatched_after", "solve_time_ms", "total_combos_evaluated",
         ])
         print(f"Data saved to {csv_path}")
 
@@ -197,12 +215,18 @@ def main() -> None:
     bl_colors = {256: "#8dd3c7", 512: "#ffffb3", 1024: "#fb8072", 2048: "#bebada", 4096: "#80b1d3"}
     ber_colors = {0.01: "#e41a1c", 0.03: "#377eb8", 0.05: "#4daf4a"}
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle("Approximate ECC: Correction Success Rate", fontsize=14, fontweight="bold")
-
-    # Col 0: Success rate vs BER — lines = block_size subset, fixed hash_bits
-    ax = axes[0]
     line_bl = [bl for bl in LINE_BIT_LENGTHS if bl in bit_lengths]
+    line_ber = [b for b in LINE_BER_VALUES if any(abs(v - b) < 1e-9 for v in ber_values)]
+    fixed_bl = FIXED_BIT_LENGTH if FIXED_BIT_LENGTH in bit_lengths else bit_lengths[-1]
+
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    fig.suptitle("Approximate ECC: Correction Success Rate and False Solve Rate",
+                 fontsize=14, fontweight="bold")
+
+    # ── Row 0: True success rate (fully_corrected == 1) ──────────────────────
+
+    # Col 0: vs BER — lines = block_size, fixed hash_bits
+    ax = axes[0, 0]
     for bl in line_bl:
         xs_raw, ys, errs = _success_series(rows, "ber", ber_values, bit_length=bl, hash_bits=FIXED_HASH_BITS)
         xs = [v * 100 for v in xs_raw]
@@ -217,8 +241,8 @@ def main() -> None:
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=9)
 
-    # Col 1: Success rate vs block size — lines = hash_bits, fixed BER
-    ax = axes[1]
+    # Col 1: vs block size — lines = hash_bits, fixed BER
+    ax = axes[0, 1]
     for hb in hash_bits_list:
         xs, ys, errs = _success_series(rows, "bit_length", bit_lengths, hash_bits=hb, ber=FIXED_BER)
         ax.errorbar(xs, ys, yerr=errs, marker="o", linewidth=2, capsize=3,
@@ -234,10 +258,8 @@ def main() -> None:
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=9)
 
-    # Col 2: Success rate vs hash width — lines = BER subset, fixed block_size
-    ax = axes[2]
-    line_ber = [b for b in LINE_BER_VALUES if any(abs(v - b) < 1e-9 for v in ber_values)]
-    fixed_bl = FIXED_BIT_LENGTH if FIXED_BIT_LENGTH in bit_lengths else bit_lengths[-1]
+    # Col 2: vs hash width — lines = BER, fixed block_size
+    ax = axes[0, 2]
     for ber in line_ber:
         xs, ys, errs = _success_series(rows, "hash_bits", hash_bits_list, bit_length=fixed_bl, ber=ber)
         ax.errorbar(xs, ys, yerr=errs, marker="o", linewidth=2, capsize=3,
@@ -248,6 +270,67 @@ def main() -> None:
     ax.set_ylabel("Success rate (%)")
     ax.set_xticks(hash_bits_list)
     ax.set_ylim(-5, 105)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=9)
+
+    # ── Row 1: False solve rate (mismatched_after==0 AND fully_corrected==0) ──
+
+    # Compute a reasonable y-limit for false solve panels
+    all_fs = [
+        p for x_key, x_vals, kw in [
+            ("ber", ber_values, {"hash_bits": FIXED_HASH_BITS}),
+            ("bit_length", bit_lengths, {"ber": FIXED_BER}),
+            ("hash_bits", hash_bits_list, {"bit_length": fixed_bl}),
+        ]
+        for xv in x_vals
+        for subset in [_filter(rows, **dict(kw, **{x_key: xv}))]
+        if subset
+        for p in [sum(1 for r in subset if r["mismatched_after"] == 0 and r["fully_corrected"] == 0) / len(subset) * 100]
+    ]
+    fs_ylim = max(5.0, max(all_fs) * 1.2) if all_fs else 5.0
+
+    # Col 0: vs BER
+    ax = axes[1, 0]
+    for bl in line_bl:
+        xs_raw, ys, errs = _false_solve_series(rows, "ber", ber_values, bit_length=bl, hash_bits=FIXED_HASH_BITS)
+        xs = [v * 100 for v in xs_raw]
+        ax.errorbar(xs, ys, yerr=errs, marker="s", linewidth=2, capsize=3,
+                    label=f"L={bl}", color=bl_colors.get(bl, "gray"))
+    ax.set_title(f"False solve rate vs BER  ({FIXED_HASH_BITS}-bit hash)")
+    ax.set_xlabel("BER (%)")
+    ax.set_ylabel("False solve rate (%)")
+    ax.set_xticks([v * 100 for v in ber_values])
+    ax.set_ylim(-0.2, fs_ylim)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=9)
+
+    # Col 1: vs block size
+    ax = axes[1, 1]
+    for hb in hash_bits_list:
+        xs, ys, errs = _false_solve_series(rows, "bit_length", bit_lengths, hash_bits=hb, ber=FIXED_BER)
+        ax.errorbar(xs, ys, yerr=errs, marker="s", linewidth=2, capsize=3,
+                    label=f"{hb}-bit CRC", color=hb_colors.get(hb, "gray"))
+    ax.set_title(f"False solve rate vs block size  (BER={FIXED_BER:.0%})")
+    ax.set_xlabel("Block size (bits)")
+    ax.set_ylabel("False solve rate (%)")
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(bit_lengths)
+    ax.set_xticklabels([str(b) for b in bit_lengths])
+    ax.set_ylim(-0.2, fs_ylim)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=9)
+
+    # Col 2: vs hash width
+    ax = axes[1, 2]
+    for ber in line_ber:
+        xs, ys, errs = _false_solve_series(rows, "hash_bits", hash_bits_list, bit_length=fixed_bl, ber=ber)
+        ax.errorbar(xs, ys, yerr=errs, marker="s", linewidth=2, capsize=3,
+                    label=f"BER={ber:.0%}", color=ber_colors.get(ber, "gray"))
+    ax.set_title(f"False solve rate vs hash width  (L={fixed_bl})")
+    ax.set_xlabel("Hash width (bits)")
+    ax.set_ylabel("False solve rate (%)")
+    ax.set_xticks(hash_bits_list)
+    ax.set_ylim(-0.2, fs_ylim)
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=9)
 
